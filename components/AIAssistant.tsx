@@ -4,37 +4,38 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Define message types
-type MessageType = 'user' | 'ai';
+type MessageType = 'user' | 'system';
 
 interface Message {
   id: string;
   content: string;
   type: MessageType;
   timestamp: Date;
+  taxRegime?: string;
 }
 
-// Sample suggestions for users
-const TAX_SUGGESTIONS = [
-  "How do I save tax on my salary income?",
-  "Compare old vs new tax regime for me",
-  "What are the best tax saving investments?",
-  "How much can I save under Section 80C?",
-  "What's the HRA exemption formula?",
-  "Is NPS a good tax saving option?",
-];
+// Character limit for user inputs
+const MAX_CHARS = 300;
 
-export default function AIAssistant() {
+export default function TaxInfoAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "👋 Hi there! I'm your AI Tax Assistant. How can I help you with your tax planning today?",
-      type: 'ai',
+      content: "👋 Welcome to the Tax Calculator! Ask questions about tax regimes, deductions, or calculations for FY 2024-25 and 2025-26.",
+      type: 'system',
       timestamp: new Date(),
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
+  const [taxRegime, setTaxRegime] = useState('new'); // Default to new regime
+  const [presetQuestions, setPresetQuestions] = useState([
+    "What's my tax on ₹10L income?",
+    "How do deductions work?",
+    "Which regime is better for ₹7L salary?"
+  ]);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to the latest message
@@ -50,31 +51,41 @@ export default function AIAssistant() {
   // Handle user message submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput) return;
+    
+    // Check length
+    if (trimmedInput.length > MAX_CHARS) {
+      setStatusMessage(`Message exceeds maximum length of ${MAX_CHARS} characters.`);
+      setTimeout(() => setStatusMessage(null), 3000);
+      return;
+    }
 
     // Add user message
     const userMessage: Message = {
       id: generateId(),
-      content: input,
+      content: trimmedInput,
       type: 'user',
       timestamp: new Date(),
+      taxRegime: taxRegime
     };
 
     setMessages([...messages, userMessage]);
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response after a short delay
+    // Simulate system response after a short delay
     setTimeout(() => {
-      const aiResponse: Message = {
+      const systemResponse: Message = {
         id: generateId(),
-        content: generateAIResponse(input),
-        type: 'ai',
+        content: generateStaticResponse(trimmedInput),
+        type: 'system',
         timestamp: new Date(),
+        taxRegime: taxRegime
       };
-      setMessages((prev) => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, systemResponse]);
       setIsTyping(false);
-    }, 1000 + Math.random() * 1000); // Random delay between 1-2 seconds
+    }, 500); // Short delay for more responsive feeling
   };
 
   // Handle suggestion clicks
@@ -82,27 +93,121 @@ export default function AIAssistant() {
     setInput(suggestion);
   };
 
-  // Basic AI response generator (to be replaced with real AI)
-  const generateAIResponse = (query: string): string => {
+  // Handle regime change
+  const handleRegimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTaxRegime(e.target.value);
+  };
+
+  // Copy text to clipboard
+  const copyToClipboard = (content: string) => {
+    navigator.clipboard.writeText(content)
+      .then(() => {
+        setStatusMessage("Copied to clipboard!");
+        setTimeout(() => setStatusMessage(null), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+        setStatusMessage("Failed to copy to clipboard");
+        setTimeout(() => setStatusMessage(null), 2000);
+      });
+  };
+
+  // Handle input change with character limit
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value.length <= MAX_CHARS || value.length < input.length) {
+      setInput(value);
+    }
+  };
+
+  // Generate a static response based on the query
+  const generateStaticResponse = (query: string): string => {
     const lcQuery = query.toLowerCase();
     
-    if (lcQuery.includes('section 80c') || lcQuery.includes('80c')) {
-      return "Under Section 80C, you can claim deductions up to ₹1,50,000 for investments in PPF, ELSS, NSC, tax-saving FDs, life insurance premiums, and more. Would you like to know which 80C investments might be best for your situation?";
+    if (lcQuery.includes('10l') || lcQuery.includes('10 lakh')) {
+      if (taxRegime === 'new') {
+        return `For income of ₹10,00,000 in the New Regime (FY 2025-26):
+
+Gross Income: ₹10,00,000
+Standard Deduction: ₹50,000
+Taxable Income: ₹9,50,000
+
+Tax Calculation:
+- First ₹3,00,000: No tax (0%)
+- Next ₹3,00,000 (₹3,00,001 to ₹6,00,000): ₹15,000 (5%)
+- Next ₹3,00,000 (₹6,00,001 to ₹9,00,000): ₹30,000 (10%)
+- Remaining ₹50,000 (₹9,00,001 to ₹9,50,000): ₹7,500 (15%)
+
+Total Tax: ₹52,500
+Plus 4% Education Cess: ₹2,100
+Final Tax Liability: ₹54,600`;
+      } else {
+        return `For income of ₹10,00,000 in the Old Regime (FY 2024-25):
+
+Gross Income: ₹10,00,000
+Standard Deduction: ₹50,000
+Taxable Income (without other deductions): ₹9,50,000
+
+Tax Calculation:
+- First ₹2,50,000: No tax (0%)
+- Next ₹2,50,000 (₹2,50,001 to ₹5,00,000): ₹12,500 (5%)
+- Next ₹5,00,000 (₹5,00,001 to ₹10,00,000): ₹1,00,000 (20%)
+
+Total Tax: ₹1,12,500
+Plus 4% Education Cess: ₹4,500
+Final Tax Liability: ₹1,17,000
+
+Note: This can be significantly lower if you claim 80C, 80D, and other deductions available in the old regime.`;
+      }
+    } else if (lcQuery.includes('deduction')) {
+      if (taxRegime === 'new') {
+        return `In the New Regime (FY 2025-26), most deductions are not available. 
+
+Available deductions:
+- Standard deduction of ₹50,000 (for salaried individuals)
+- Employer contribution to NPS under Sec 80CCD(2)
+
+The new regime compensates for fewer deductions with lower tax rates.`;
+      } else {
+        return `In the Old Regime (FY 2024-25), you can claim these major deductions:
+
+1. Section 80C (up to ₹1,50,000): PPF, ELSS, Life Insurance, etc.
+2. Section 80D (up to ₹25,000, ₹50,000 for senior citizens): Health Insurance
+3. Housing Loan Interest (up to ₹2,00,000)
+4. HRA Exemption: Based on rent paid, salary, and city
+5. NPS Additional Deduction: Up to ₹50,000 under Sec 80CCD(1B)
+6. Standard Deduction: Flat ₹50,000 for all salaried employees
+
+These deductions can significantly reduce your taxable income.`;
+      }
+    } else if (lcQuery.includes('7l') || lcQuery.includes('7 lakh')) {
+      return `For a salary of ₹7,00,000, comparing both regimes:
+
+Old Regime (FY 2024-25):
+- Gross Income: ₹7,00,000
+- Standard Deduction: ₹50,000
+- Possible 80C Deduction: ₹1,50,000
+- Taxable Income: ₹5,00,000
+- Tax: ₹12,500 (5% of ₹2,50,000) + 4% cess = ₹13,000
+
+New Regime (FY 2025-26):
+- Gross Income: ₹7,00,000
+- Standard Deduction: ₹50,000
+- Taxable Income: ₹6,50,000
+- Tax: ₹15,000 (5% of ₹3,00,000) + ₹5,000 (10% of ₹50,000) + 4% cess = ₹20,800
+
+For a salary of ₹7L, the Old Regime would be better IF you can utilize the full ₹1.5L deduction under 80C. Otherwise, the New Regime might be simpler.`;
+    } else if (lcQuery.includes('regime')) {
+      return `The Indian tax system offers two tax regimes:
+
+1. Old Regime (FY 2024-25): Higher tax rates but offers various deductions and exemptions like 80C, 80D, HRA, home loan interest, etc. Tax slabs are 0% up to ₹2.5L, 5% for ₹2.5-5L, 20% for ₹5-10L, and 30% above ₹10L.
+
+2. New Regime (FY 2025-26): Lower tax rates but minimal deductions. Tax slabs are 0% up to ₹3L, 5% for ₹3-6L, 10% for ₹6-9L, 15% for ₹9-12L, 20% for ₹12-15L, and 30% above ₹15L.
+
+Choosing between them depends on your income level and how much you invest in tax-saving instruments. Generally, if you claim substantial deductions, the old regime may be better. If you prefer simplicity or don't have many deductions, the new regime might be advantageous.`;
+    } else {
+      return `To answer your question about "${query}", please try using our main Tax Calculator tool for more detailed information or try one of the preset questions below.`;
     }
-    
-    if (lcQuery.includes('hra') || lcQuery.includes('house rent')) {
-      return "HRA exemption is calculated as the minimum of: (1) Actual HRA received, (2) 50% of basic salary for metro cities or 40% for non-metros, (3) Rent paid minus 10% of basic salary. Would you like me to calculate your specific HRA exemption?";
-    }
-    
-    if (lcQuery.includes('nps') || lcQuery.includes('national pension')) {
-      return "NPS is a great tax-saving option. You get tax benefits under Section 80CCD(1) within the 80C limit of ₹1.5 lakh, plus an additional deduction of up to ₹50,000 under Section 80CCD(1B). The returns are market-linked and it helps build a retirement corpus.";
-    }
-    
-    if (lcQuery.includes('old') && lcQuery.includes('new') && (lcQuery.includes('regime') || lcQuery.includes('tax'))) {
-      return "To compare old vs new tax regimes, I need to know your income details and eligible deductions. The old regime has higher tax rates but allows various deductions like 80C, 80D, HRA, etc. The new regime has lower rates but very limited deductions. Would you like to enter your details for a personalized comparison?";
-    }
-    
-    return "That's a good question about Indian taxes. To give you the most accurate advice, I'd need to know more about your income sources, expenses, and investment goals. Would you like to use our detailed Tax Calculator for a more personalized analysis?";
   };
 
   // Chat container variants for Framer Motion
@@ -146,7 +251,7 @@ export default function AIAssistant() {
           </svg>
         ) : (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-            <path fillRule="evenodd" d="M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 00.44 1.223zM8.25 10.875a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25zM10.875 12a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875-1.125a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25z" clipRule="evenodd" />
+            <path d="M10.5 1.875a1.125 1.125 0 012.25 0v8.219c.517.384 1.029.768 1.5 1.175V5.75a1.125 1.125 0 012.25 0v5.519c.91.684 1.5 1.115 1.5 1.115v-3.134a1.125 1.125 0 012.25 0v7.635a6.751 6.751 0 01-6.75 6.75h-7.5a6.75 6.75 0 01-6.75-6.75v-7.635a1.125 1.125 0 012.25 0v3.134c0 .345.25.688.5 1 .312.344.813.672 1.5 1.115V5.75a1.125 1.125 0 012.25 0v5.519c.518-.44 1.03-.826 1.5-1.175V1.875z" />
           </svg>
         )}
       </motion.button>
@@ -165,12 +270,18 @@ export default function AIAssistant() {
             <div className="px-4 py-3 bg-primary-500 text-white rounded-t-lg flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                  <path d="M4.913 2.658c2.075-.27 4.19-.408 6.337-.408 2.147 0 4.262.139 6.337.408 1.922.25 3.291 1.861 3.405 3.727a4.403 4.403 0 00-1.032-.211 50.89 50.89 0 00-8.42 0c-2.358.196-4.04 2.19-4.04 4.434v4.286a4.47 4.47 0 002.433 3.984L7.28 21.53A.75.75 0 016 21v-4.03a48.527 48.527 0 01-1.087-.128C2.905 16.58 1.5 14.833 1.5 12.862V6.638c0-1.97 1.405-3.718 3.413-3.979z" />
-                  <path d="M15.75 7.5c-1.376 0-2.739.057-4.086.169C10.124 7.797 9 9.103 9 10.609v4.285c0 1.507 1.128 2.814 2.67 2.94 1.243.102 2.5.157 3.768.165l2.782 2.781a.75.75 0 001.28-.53v-2.39l.33-.026c1.542-.125 2.67-1.433 2.67-2.94v-4.286c0-1.505-1.125-2.811-2.664-2.94A49.392 49.392 0 0015.75 7.5z" />
+                  <path d="M10.5 1.875a1.125 1.125 0 012.25 0v8.219c.517.384 1.029.768 1.5 1.175V5.75a1.125 1.125 0 012.25 0v5.519c.91.684 1.5 1.115 1.5 1.115v-3.134a1.125 1.125 0 012.25 0v7.635a6.751 6.751 0 01-6.75 6.75h-7.5a6.75 6.75 0 01-6.75-6.75v-7.635a1.125 1.125 0 012.25 0v3.134c0 .345.25.688.5 1 .312.344.813.672 1.5 1.115V5.75a1.125 1.125 0 012.25 0v5.519c.518-.44 1.03-.826 1.5-1.175V1.875z" />
                 </svg>
-                <h3 className="font-medium">AI Tax Assistant</h3>
+                <h3 className="font-medium">Tax Calculator</h3>
               </div>
-              <span className="text-xs bg-white/20 px-2 py-1 rounded">Beta</span>
+              <select 
+                value={taxRegime} 
+                onChange={handleRegimeChange}
+                className="text-xs bg-primary-600 text-white rounded border border-primary-400 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-white"
+              >
+                <option value="new">New Regime (FY 2025-26)</option>
+                <option value="old">Old Regime (FY 2024-25)</option>
+              </select>
             </div>
             
             {/* Messages container */}
@@ -183,39 +294,68 @@ export default function AIAssistant() {
                   }`}
                 >
                   <div
-                    className={`inline-block max-w-[80%] rounded-lg px-4 py-2 ${
+                    className={`inline-block max-w-[85%] rounded-lg px-4 py-2 ${
                       message.type === 'user'
                         ? 'bg-primary-500 text-white'
                         : 'bg-white dark:bg-dark-card shadow-sm border border-gray-200 dark:border-dark-border'
                     }`}
                   >
                     <p className={`text-sm ${message.type === 'user' ? 'text-white' : 'text-gray-800 dark:text-gray-200'}`}>
-                      {message.content}
+                      {/* Render message content with proper line breaks */}
+                      {message.content.split('\n').map((line, i) => (
+                        <span key={i}>
+                          {line}
+                          {i < message.content.split('\n').length - 1 && <br />}
+                        </span>
+                      ))}
                     </p>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+                      <span>
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {message.type === 'system' && (
+                        <button 
+                          onClick={() => copyToClipboard(message.content)}
+                          className="text-primary-500 hover:text-primary-700 focus:outline-none"
+                          title="Copy to clipboard"
+                        >
+                          📋
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
               {isTyping && (
                 <div className="mb-3 text-left">
                   <div className="inline-block rounded-lg px-4 py-2 bg-white dark:bg-dark-card shadow-sm border border-gray-200 dark:border-dark-border">
+                    <div className="flex items-center space-x-2">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse delay-0"></div>
                       <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse delay-150"></div>
                       <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse delay-300"></div>
+                      </div>
+                      <span className="text-xs text-gray-500">Calculating...</span>
                     </div>
                   </div>
+                </div>
+              )}
+              {statusMessage && (
+                <div className={`mb-3 text-center px-3 py-1 mx-auto rounded-full text-xs ${
+                  statusMessage.includes('Copied') 
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}>
+                  {statusMessage}
                 </div>
               )}
               <div ref={messageEndRef} />
             </div>
             
-            {/* Suggestions */}
+            {/* Preset questions */}
             <div className="px-4 py-2 border-t border-gray-200 dark:border-dark-border overflow-x-auto">
               <div className="flex space-x-2 pb-1">
-                {TAX_SUGGESTIONS.map((suggestion, index) => (
+                {presetQuestions.map((suggestion, index) => (
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
@@ -230,18 +370,25 @@ export default function AIAssistant() {
             {/* Input area */}
             <div className="p-3 border-t border-gray-200 dark:border-dark-border">
               <form onSubmit={handleSubmit} className="flex space-x-2">
+                <div className="relative flex-grow">
                 <input
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about taxes or savings..."
-                  className="flex-grow px-4 py-2 bg-gray-100 dark:bg-dark-border border border-transparent focus:border-primary-300 dark:focus:border-primary-700 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 text-gray-700 dark:text-gray-200"
-                />
+                    onChange={handleInputChange}
+                  placeholder="Ask about tax calculations..."
+                    className="w-full px-4 py-2 bg-gray-100 dark:bg-dark-border border border-transparent focus:border-primary-300 dark:focus:border-primary-700 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900 text-gray-700 dark:text-gray-200 pr-16"
+                  />
+                  <div className="absolute right-16 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
+                    <span className={input.length > MAX_CHARS * 0.8 ? 'text-orange-500' : ''}>
+                      {input.length}/{MAX_CHARS}
+                    </span>
+                  </div>
+                </div>
                 <button
                   type="submit"
-                  disabled={!input.trim()}
+                  disabled={!input.trim() || input.length > MAX_CHARS}
                   className={`p-2 rounded-full ${
-                    input.trim()
+                    input.trim() && input.length <= MAX_CHARS
                       ? 'bg-primary-500 hover:bg-primary-600 text-white'
                       : 'bg-gray-200 dark:bg-dark-border text-gray-400'
                   }`}

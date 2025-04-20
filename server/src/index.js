@@ -13,9 +13,9 @@ const compression = require('compression');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
-const chatRoutes = require('./routes/chat.routes');
 const historyRoutes = require('./routes/history.routes');
 const userRoutes = require('./routes/user.routes');
+const taxRoutes = require('./routes/tax.routes');
 
 // Import middleware
 const { errorHandler } = require('./middleware/error.middleware');
@@ -62,7 +62,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/chat', authenticate, chatRoutes);
+app.use('/api/tax', taxRoutes);
 app.use('/api/history', authenticate, historyRoutes);
 app.use('/api/user', authenticate, userRoutes);
 

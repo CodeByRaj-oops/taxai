@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
-const { OpenAI } = require('openai');
 
 // Load environment variables
 dotenv.config();
@@ -11,114 +10,155 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configure OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 // Middleware
 app.use(cors()); // Enable CORS for frontend requests
 app.use(bodyParser.json()); // Parse JSON request bodies
+app.use(express.static('public')); // Serve static files from public directory
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// OpenAI Chat API endpoint
-app.post('/api/chat', async (req, res) => {
+// Tax calculation endpoint - static response for now
+app.post('/api/tax/calculate', (req, res) => {
   try {
-    const { message, taxData } = req.body;
+    const { taxInputs } = req.body;
     
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    if (!taxInputs) {
+      return res.status(400).json({ error: 'Tax input data is required' });
     }
 
-    // Format the user's tax data for the AI context
-    let taxContext = '';
-    if (taxData) {
-      const { taxInputs, taxResults } = taxData;
-      
-      // Format currency for display
-      const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-IN', {
-          style: 'currency',
-          currency: 'INR',
-          maximumFractionDigits: 0
-        }).format(amount || 0);
-      };
+    // Format currency for display
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+      }).format(amount || 0);
+    };
 
-      taxContext = `
-Current tax calculation data:
-- Basic Salary: ${formatCurrency(taxInputs?.basicSalary)}
-- HRA Received: ${formatCurrency(taxInputs?.hra)}
-- Special Allowance: ${formatCurrency(taxInputs?.specialAllowance)}
-- LTA: ${formatCurrency(taxInputs?.lta)}
-- Other Income: ${formatCurrency(taxInputs?.otherIncome)}
-- Rent Paid: ${formatCurrency(taxInputs?.rentPaid)}
-- City Type: ${taxInputs?.cityType || 'Not specified'}
+    // Basic tax calculation logic (simplified)
+    const calculateTax = (income, regime) => {
+      // This is a simplified calculation - real calculations would be more complex
+      if (regime === 'old') {
+        if (income <= 250000) return 0;
+        else if (income <= 500000) return (income - 250000) * 0.05;
+        else if (income <= 1000000) return 12500 + (income - 500000) * 0.2;
+        else return 112500 + (income - 1000000) * 0.3;
+      } else { // new regime
+        if (income <= 300000) return 0;
+        else if (income <= 600000) return (income - 300000) * 0.05;
+        else if (income <= 900000) return 15000 + (income - 600000) * 0.1;
+        else if (income <= 1200000) return 45000 + (income - 900000) * 0.15;
+        else if (income <= 1500000) return 90000 + (income - 1200000) * 0.2;
+        else return 150000 + (income - 1500000) * 0.3;
+      }
+    };
 
-Deductions:
-- Section 80C: ${formatCurrency(taxInputs?.section80C)}
-- Health Insurance (Self & Family): ${formatCurrency(taxInputs?.section80D_self)}
-- Health Insurance (Parents): ${formatCurrency(taxInputs?.section80D_parents)}
-- NPS Additional: ${formatCurrency(taxInputs?.nps)}
-- Home Loan Interest: ${formatCurrency(taxInputs?.homeLoanInterest)}
+    // Calculate gross income
+    const grossIncome = (taxInputs.basicSalary || 0) + 
+                        (taxInputs.hra || 0) + 
+                        (taxInputs.specialAllowance || 0) + 
+                        (taxInputs.lta || 0) + 
+                        (taxInputs.otherIncome || 0);
 
-Tax Calculation Results:
-- Old Regime Tax: ${formatCurrency(taxResults?.oldRegime?.taxAmount)}
-- New Regime Tax: ${formatCurrency(taxResults?.newRegime?.taxAmount)}
-- Recommended Regime: ${taxResults?.bestRegime === 'old' ? 'Old Regime' : 'New Regime'}
-- Tax Savings with Recommended Regime: ${formatCurrency(taxResults?.totalSavings)}
+    // Calculate old regime tax
+    const standardDeduction = 50000;
+    let oldRegimeTaxableIncome = grossIncome - standardDeduction;
 
-The user is asking: "${message}"
-`;
-    } else {
-      taxContext = message;
-    }
+    // Apply deductions for old regime
+    const oldRegimeDeductions = (taxInputs.section80C || 0) + 
+                               (taxInputs.section80D_self || 0) + 
+                               (taxInputs.section80D_parents || 0) + 
+                               (taxInputs.nps || 0) + 
+                               (taxInputs.homeLoanInterest || 0);
+    
+    oldRegimeTaxableIncome = Math.max(0, oldRegimeTaxableIncome - oldRegimeDeductions);
+    const oldRegimeTax = calculateTax(oldRegimeTaxableIncome, 'old');
+    const oldRegimeCess = oldRegimeTax * 0.04; // 4% cess
+    const oldRegimeTotalTax = oldRegimeTax + oldRegimeCess;
 
-    // Call OpenAI API with GPT-4
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { 
-          role: "system", 
-          content: "You are TaxAI, an expert in Indian tax law." 
-        },
-        { 
-          role: "user", 
-          content: taxContext 
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
+    // Calculate new regime tax
+    let newRegimeTaxableIncome = grossIncome - standardDeduction;
+    const newRegimeTax = calculateTax(newRegimeTaxableIncome, 'new');
+    const newRegimeCess = newRegimeTax * 0.04; // 4% cess
+    const newRegimeTotalTax = newRegimeTax + newRegimeCess;
 
-    // Send the AI's response back to client
-    res.json({ 
-      reply: completion.choices[0].message.content 
-    });
+    // Determine best regime
+    const bestRegime = oldRegimeTotalTax <= newRegimeTotalTax ? 'old' : 'new';
+    const taxSavings = Math.abs(oldRegimeTotalTax - newRegimeTotalTax);
+
+    // Prepare response
+    const taxResults = {
+      oldRegime: {
+        grossIncome,
+        deductions: oldRegimeDeductions + standardDeduction,
+        taxableIncome: oldRegimeTaxableIncome,
+        taxAmount: oldRegimeTotalTax,
+        netIncome: grossIncome - oldRegimeTotalTax
+      },
+      newRegime: {
+        grossIncome,
+        deductions: standardDeduction, // Only standard deduction in new regime
+        taxableIncome: newRegimeTaxableIncome,
+        taxAmount: newRegimeTotalTax,
+        netIncome: grossIncome - newRegimeTotalTax
+      },
+      bestRegime,
+      totalSavings: taxSavings
+    };
+
+    res.json({ taxResults });
     
   } catch (error) {
-    console.error('Error calling OpenAI:', error);
-    
-    // Handle different types of errors
-    if (error.response) {
-      // OpenAI API error
-      res.status(error.response.status).json({
-        error: `OpenAI API error: ${error.response.data.error.message}`,
-      });
-    } else {
-      // Other errors
-      res.status(500).json({
-        error: 'Failed to generate tax analysis. Please try again later.',
-      });
-    }
+    console.error('Error calculating tax:', error);
+    res.status(500).json({
+      error: 'Failed to calculate tax. Please try again later.',
+    });
   }
+});
+
+// Tax regime information endpoint
+app.get('/api/tax/regimes', (req, res) => {
+  res.json({
+    regimes: [
+      {
+        id: 'old',
+        name: 'Old Regime',
+        fiscalYear: 'FY 2024-25',
+        slabs: [
+          { limit: 250000, rate: 0 },
+          { limit: 500000, rate: 5 },
+          { limit: 1000000, rate: 20 },
+          { limit: Infinity, rate: 30 }
+        ],
+        deductions: [
+          { code: '80C', name: 'Section 80C', limit: 150000, description: 'Investments such as PPF, ELSS, etc.' },
+          { code: '80D', name: 'Health Insurance', limit: 25000, description: 'Health insurance premiums' }
+        ]
+      },
+      {
+        id: 'new',
+        name: 'New Regime',
+        fiscalYear: 'FY 2025-26',
+        slabs: [
+          { limit: 300000, rate: 0 },
+          { limit: 600000, rate: 5 },
+          { limit: 900000, rate: 10 },
+          { limit: 1200000, rate: 15 },
+          { limit: 1500000, rate: 20 },
+          { limit: Infinity, rate: 30 }
+        ],
+        deductions: [
+          { code: 'std', name: 'Standard Deduction', limit: 50000, description: 'Fixed deduction for all taxpayers' }
+        ]
+      }
+    ]
+  });
 });
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`OpenAI API Key is ${process.env.OPENAI_API_KEY ? 'configured' : 'missing'}`);
 }); 
