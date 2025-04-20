@@ -1,29 +1,67 @@
-# dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.js
+.yarn/install-state.gz
 
-# testing
+# Testing
 /coverage
+.nyc_output
+/cypress/screenshots
+/cypress/videos
+/test-results/
 
-# next.js
+# Next.js
 /.next/
 /out/
+.swc/
 
-# production
+# Production
 /build
+/dist
 
-# misc
-.DS_Store
-*.pem
+# Environment variables
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
 
-# debug
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# Logs
+logs
+*.log
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Turborepo
+.turbo
+
+# misc
+*.pem
 
 # vercel
 .vercel

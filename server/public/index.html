@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indian Tax Consultation System</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f7fa;
+    }
+    .container {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      margin-top: 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    h1 {
+      color: #1a73e8;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+    h2 {
+      font-size: 1.8rem;
+      color: #2c3e50;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .feature-card {
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .feature-card h3 {
+      color: #1a73e8;
+      margin-top: 0;
+      font-size: 1.4rem;
+    }
+    .calculator {
+      background-color: #e8f0fe;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 30px 0;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #2c3e50;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 4px;
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #2c3e50;
+      background-color: #fff;
+    }
+    input[type="number"]:focus {
+      border-color: #1a73e8;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
+    }
+    button {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #0d62d1;
+    }
+    .results {
+      margin-top: 30px;
+      background-color: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: none;
+    }
+    .results.visible {
+      display: block;
+    }
+    .results h3 {
+      margin-top: 0;
+      color: #1a73e8;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 1.15rem;
+    }
+    table th, table td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    table th {
+      font-weight: 600;
+      color: #2c3e50;
+      background-color: #f8f9fa;
+    }
+    table td {
+      font-weight: 500;
+    }
+    .currency-value {
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: #2c3e50;
+    }
+    .recommendation {
+      margin-top: 25px;
+      font-weight: 600;
+      font-size: 1.4rem;
+      color: #1a73e8;
+      text-align: center;
+      padding: 15px;
+      background-color: #e8f0fe;
+      border-radius: 6px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      color: #666;
+      font-size: 14px;
+    }
+    /* AI Chat Styles */
+    .ai-chat {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+      margin: 30px 0;
+    }
+    .chat-container {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #f9f9f9;
+    }
+    .chat-message {
+      margin-bottom: 15px;
+      padding: 10px 15px;
+      border-radius: 18px;
+      max-width: 80%;
+      position: relative;
+      font-size: 1.1rem;
+    }
+    .user-message {
+      background-color: #1a73e8;
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 5px;
+    }
+    .ai-message {
+      background-color: #e9ecef;
+      color: #333;
+      margin-right: auto;
+      border-bottom-left-radius: 5px;
+    }
+    .message-input {
+      display: flex;
+      gap: 10px;
+    }
+    .message-input input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1.1rem;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .tab {
+      padding: 15px 25px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+    .tab.active {
+      border-bottom: 3px solid #1a73e8;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Indian Tax Consultation System</h1>
+    <p>Plan your taxes efficiently with our advanced tools and personalized advice</p>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="calculator">Tax Calculator</div>
+    <div class="tab" data-tab="ai-chat">AI Tax Assistant</div>
+  </div>
+
+  <div class="container">
+    <div class="tab-content active" id="calculator-tab">
+      <div class="features">
+        <div class="feature-card">
+          <h3>Tax Calculation</h3>
+          <p>Compare old vs new tax regime to find the best option for you based on your income and deductions.</p>
+        </div>
+        <div class="feature-card">
+          <h3>AI Tax Assistant</h3>
+          <p>Get personalized tax advice from our AI assistant to optimize your tax planning.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Document Storage</h3>
+          <p>Securely store and manage your tax documents all in one place.</p>
+          <p><small>Coming soon</small></p>
+        </div>
+        <div class="feature-card">
+          <h3>Tax Filing</h3>
+          <p>File your taxes directly through our platform with guided assistance.</p>
+          <p><small>Coming soon</small></p>
+        </div>
+      </div>
+
+      <div class="calculator">
+        <h2>Tax Calculator</h2>
+        <p>Find which tax regime is best for you based on your income and deductions</p>
+        
+        <div class="form-group">
+          <label for="income">Annual Income (₹)</label>
+          <input type="number" id="income" placeholder="Enter your annual income" value="1000000">
+        </div>
+        
+        <div class="form-group">
+          <label for="investments">Total Investments under 80C (₹)</label>
+          <input type="number" id="investments" placeholder="Enter your total deductions" value="150000">
+        </div>
+        
+        <div class="form-group">
+          <label for="hra">HRA Exemption (₹)</label>
+          <input type="number" id="hra" placeholder="Enter your HRA exemption" value="60000">
+        </div>
+        
+        <button id="calculate">Calculate Tax</button>
+        
+        <div class="results" id="results">
+          <h3>Tax Calculation Results</h3>
+          
+          <table>
+            <tr>
+              <th></th>
+              <th>Old Regime</th>
+              <th>New Regime</th>
+            </tr>
+            <tr>
+              <td>Taxable Income</td>
+              <td id="old-taxable" class="currency-value">₹0</td>
+              <td id="new-taxable" class="currency-value">₹0</td>
+            </tr>
+            <tr>
+              <td>Tax Amount</td>
+              <td id="old-tax" class="currency-value">₹0</td>
+              <td id="new-tax" class="currency-value">₹0</td>
+            </tr>
+            <tr>
+              <td>Take Home Income</td>
+              <td id="old-takehome" class="currency-value">₹0</td>
+              <td id="new-takehome" class="currency-value">₹0</td>
+            </tr>
+          </table>
+          
+          <div class="recommendation" id="recommendation">
+            Recommended: <span id="recommended-regime">Old Regime</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="ai-chat-tab">
+      <div class="ai-chat">
+        <h2>AI Tax Assistant</h2>
+        <p>Get answers to your tax-related questions from our AI tax expert</p>
+        
+        <div class="chat-container" id="chat-container">
+          <div class="chat-message ai-message">
+            Hello! I'm your AI tax assistant. How can I help you with your tax-related questions today?
+          </div>
+        </div>
+        
+        <div class="message-input">
+          <input type="text" id="user-input" placeholder="Type your tax question here...">
+          <button id="send-message">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Indian Tax Consultation System | For demonstration purposes only</p>
+  </footer>
+
+  <script>
+    // Tab functionality
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active class from all tabs and tab contents
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+      });
+    });
+    
+    // Tax calculator functionality
+    document.getElementById('calculate').addEventListener('click', async function() {
+      const income = parseInt(document.getElementById('income').value) || 0;
+      const investments = parseInt(document.getElementById('investments').value) || 0;
+      const hraExemption = parseInt(document.getElementById('hra').value) || 0;
+      
+      try {
+        const response = await fetch('/api/demo/calculate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ income, investments, hraExemption })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          // Display results
+          document.getElementById('old-taxable').textContent = '₹' + data.data.oldRegime.taxableIncome.toLocaleString();
+          document.getElementById('new-taxable').textContent = '₹' + data.data.newRegime.taxableIncome.toLocaleString();
+          document.getElementById('old-tax').textContent = '₹' + data.data.oldRegime.taxAmount.toLocaleString();
+          document.getElementById('new-tax').textContent = '₹' + data.data.newRegime.taxAmount.toLocaleString();
+          document.getElementById('old-takehome').textContent = '₹' + data.data.oldRegime.netIncome.toLocaleString();
+          document.getElementById('new-takehome').textContent = '₹' + data.data.newRegime.netIncome.toLocaleString();
+          
+          document.getElementById('recommended-regime').textContent = 
+            data.data.recommendation === 'OLD_REGIME' ? 'Old Regime' : 'New Regime';
+          
+          // Show results
+          document.getElementById('results').classList.add('visible');
+        }
+      } catch (error) {
+        console.error('Error calculating tax:', error);
+        alert('There was an error calculating your tax. Please try again later.');
+      }
+    });
+    
+    // AI Chat functionality
+    const chatContainer = document.getElementById('chat-container');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-message');
+    
+    function addUserMessage(message) {
+      const userMessageDiv = document.createElement('div');
+      userMessageDiv.classList.add('chat-message', 'user-message');
+      userMessageDiv.textContent = message;
+      chatContainer.appendChild(userMessageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    function addAIResponse(message) {
+      setTimeout(() => {
+        const aiMessageDiv = document.createElement('div');
+        aiMessageDiv.classList.add('chat-message', 'ai-message');
+        aiMessageDiv.textContent = message;
+        chatContainer.appendChild(aiMessageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 500); // Small delay to simulate AI thinking
+    }
+    
+    // Handle sending messages
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (message) {
+        addUserMessage(message);
+        
+        try {
+          // Show typing indicator
+          const typingIndicator = document.createElement('div');
+          typingIndicator.classList.add('chat-message', 'ai-message');
+          typingIndicator.textContent = 'Typing...';
+          typingIndicator.id = 'typing-indicator';
+          chatContainer.appendChild(typingIndicator);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+          
+          // Call the AI API
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          
+          const data = await response.json();
+          
+          // Remove typing indicator
+          const indicator = document.getElementById('typing-indicator');
+          if (indicator) {
+            chatContainer.removeChild(indicator);
+          }
+          
+          // Add AI response
+          if (data.success && data.data && data.data.message) {
+            addAIResponse(data.data.message);
+          } else {
+            throw new Error('Invalid response from server');
+          }
+        } catch (error) {
+          console.error('Error in chat:', error);
+          
+          // Remove typing indicator if exists
+          const indicator = document.getElementById('typing-indicator');
+          if (indicator) {
+            chatContainer.removeChild(indicator);
+          }
+          
+          // Show error message
+          addAIResponse("I'm sorry, I'm having trouble connecting right now. Please try again later.");
+        }
+        
+        userInput.value = '';
+      }
+    }
+    
+    sendButton.addEventListener('click', sendMessage);
+    
+    // Allow pressing Enter to send messages
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html> 

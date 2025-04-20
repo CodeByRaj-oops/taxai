@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { 
   TaxInputs,
   TaxResults,
@@ -33,7 +33,15 @@ const OLD_TAX_REGIME = [
 // Maximum deduction limits
 const MAX_HRA_PERCENT = 0.5; // 50% of basic salary
 
+/**
+ * TaxCalculator Component
+ * 
+ * A comprehensive tax calculation form that allows users to enter
+ * their income and deduction details to compare tax liability under
+ * old and new tax regimes of the Indian Tax System 2025.
+ */
 export default function TaxCalculator() {
+  // State for form inputs
   const [inputs, setInputs] = useState<TaxInputs>({
     basicSalary: 0,
     hra: 0,
@@ -49,18 +57,30 @@ export default function TaxCalculator() {
     homeLoanInterest: 0
   });
 
+  // State for calculation results and errors
   const [results, setResults] = useState<TaxResults | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  /**
+   * Handle input changes in form fields
+   */
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setInputs({
-      ...inputs,
-      [name]: name === 'cityType' ? value : Number(value)
-    });
-  };
+    setInputs(prev => ({
+      ...prev,
+      [name]: name === 'cityType' ? value : Number(value) || 0 // Ensure numbers or default to 0
+    }));
+    
+    // Clear any previous errors when user makes changes
+    if (error) setError(null);
+  }, [error]);
 
-  const calculateHRAExemption = () => {
+  /**
+   * Calculate HRA exemption based on inputs
+   */
+  const calculateHRAExemption = useCallback(() => {
     const { basicSalary, hra, rentPaid, cityType } = inputs;
     
     // HRA exemption is minimum of:
@@ -73,176 +93,154 @@ export default function TaxCalculator() {
     const percentOfBasic = cityType === 'metro' ? 0.5 * basicSalary : 0.4 * basicSalary;
     
     return Math.min(hraReceived, rentMinusBasic, percentOfBasic);
-  };
+  }, [inputs]);
 
-  const calculateTax = (income: number, brackets: typeof NEW_TAX_REGIME) => {
-    let remainingIncome = income;
-    let tax = 0;
-    let previousLimit = 0;
-    
-    for (const bracket of brackets) {
-      const taxableInThisBracket = Math.min(remainingIncome, bracket.limit - previousLimit);
-      tax += (taxableInThisBracket * bracket.rate) / 100;
-      remainingIncome -= taxableInThisBracket;
-      previousLimit = bracket.limit;
-      if (remainingIncome <= 0) break;
-    }
-    
-    // Add 4% health and education cess
-    tax += tax * 0.04;
-    
-    return Math.round(tax);
-  };
-
-  const calculateTaxes = () => {
-    // Calculate gross total income
-    const grossTotalIncome = 
-      inputs.basicSalary + 
-      inputs.hra + 
-      inputs.lta + 
-      inputs.otherAllowances + 
-      inputs.otherIncome;
-    
-    // Calculate exemptions and deductions for old regime
-    const hraExemption = calculateHRAExemption();
-    const ltaExemption = Math.min(inputs.lta, 75000); // Assuming LTA exemption limit
-    
-    // Capped deductions as per limits
-    const section80C = Math.min(inputs.section80C, MAX_80C);
-    const section80D_self = Math.min(inputs.section80D_self, MAX_80D_SELF);
-    const section80D_parents = Math.min(inputs.section80D_parents, MAX_80D_PARENTS);
-    const homeLoanInterest = Math.min(inputs.homeLoanInterest, 200000);
-    const npsDeduction = Math.min(inputs.nps, MAX_NPS_ADDITIONAL);
-    
-    // Total deductions under old regime
-    const totalDeductions = 
-      section80C + 
-      section80D_self + 
-      section80D_parents + 
-      homeLoanInterest + 
-      npsDeduction +
-      hraExemption + 
-      ltaExemption;
-    
-    // Taxable income under old regime
-    const taxableIncomeOld = Math.max(0, grossTotalIncome - totalDeductions);
-    
-    // Taxable income under new regime (fewer deductions)
-    // Assuming only standard deduction of 50,000 in new regime
-    const standardDeduction = 50000;
-    const taxableIncomeNew = Math.max(0, grossTotalIncome - standardDeduction);
-    
-    // Calculate tax liability
-    const taxLiabilityOld = calculateTax(taxableIncomeOld, OLD_TAX_REGIME);
-    const taxLiabilityNew = calculateTax(taxableIncomeNew, NEW_TAX_REGIME);
-    
-    // Determine which regime is better
-    const savings = Math.max(taxLiabilityNew - taxLiabilityOld, taxLiabilityOld - taxLiabilityNew);
-    const bestRegime = taxLiabilityOld <= taxLiabilityNew ? 'old' : 'new';
-    
-    setResults({
-      grossTotalIncome,
-      totalDeductions,
-      taxableIncome: bestRegime === 'old' ? taxableIncomeOld : taxableIncomeNew,
-      taxLiabilityOld,
-      taxLiabilityNew,
-      savings,
-      bestRegime
-    });
-    
-    setShowResults(true);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  /**
+   * Handle form submission
+   */
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    const taxResults = calculateTaxLiability(inputs);
-    setResults(taxResults);
-    setShowResults(true);
-  };
+    setIsCalculating(true);
+    setError(null);
+    
+    try {
+      // Simulate API calculation delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const taxResults = calculateTaxLiability(inputs);
+      setResults(taxResults);
+      setShowResults(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while calculating taxes');
+      console.error('Tax calculation error:', err);
+    } finally {
+      setIsCalculating(false);
+    }
+  }, [inputs]);
+
+  // Calculate tax saving recommendations based on inputs
+  const taxSavingRecommendations = useMemo(() => {
+    if (!results) return [];
+    return getTaxSavingRecommendations(inputs);
+  }, [results, inputs]);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-primary">Tax Calculator 2025</h1>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-2 text-primary" id="calculator-heading">AI Tax Consultant - Indian Tax Regime 2025</h1>
+      <p className="text-gray-600 mb-6">I'll help you legally minimize your taxes by finding the best deductions, exemptions, and investment strategies.</p>
+      
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+          <p className="font-bold">Error</p>
+          <p>{error}</p>
+        </div>
+      )}
       
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <form onSubmit={handleSubmit}>
+        <div className="bg-blue-50 p-4 rounded-lg mb-6 border-l-4 border-blue-500">
+          <h2 className="text-lg font-semibold text-blue-700 mb-2">How I Can Help You</h2>
+          <ul className="list-disc pl-5 space-y-1 text-gray-700">
+            <li>Compare both tax regimes to find which one saves you more money</li>
+            <li>Suggest personalized tax-saving investments based on your profile</li>
+            <li>Identify all eligible deductions under Section 80C, 80D, and more</li>
+            <li>Calculate optimum HRA exemptions based on your city and rent</li>
+            <li>Provide step-by-step actions to legally minimize your tax liability</li>
+          </ul>
+        </div>
+        
+        <form onSubmit={handleSubmit} aria-labelledby="calculator-heading">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h2 className="text-xl font-semibold mb-4 text-primary">Income Details</h2>
+              <h3 className="text-xl font-semibold mb-4 text-primary">Income Details</h3>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Basic Salary (₹)</label>
+                <label htmlFor="basicSalary" className="block text-gray-700 mb-2">Basic Salary (₹)</label>
                 <input
                   type="number"
+                  id="basicSalary"
                   name="basicSalary"
                   value={inputs.basicSalary}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
+                  aria-describedby="basicSalary-help"
                 />
+                <p id="basicSalary-help" className="text-xs text-gray-500 mt-1">Enter your annual basic salary component</p>
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">HRA Received (₹)</label>
+                <label htmlFor="hra" className="block text-gray-700 mb-2">HRA Received (₹)</label>
                 <input
                   type="number"
+                  id="hra"
                   name="hra"
                   value={inputs.hra}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                 />
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">LTA (₹)</label>
+                <label htmlFor="lta" className="block text-gray-700 mb-2">LTA (₹)</label>
                 <input
                   type="number"
+                  id="lta"
                   name="lta"
                   value={inputs.lta}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                 />
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Other Allowances (₹)</label>
+                <label htmlFor="otherAllowances" className="block text-gray-700 mb-2">Other Allowances (₹)</label>
                 <input
                   type="number"
+                  id="otherAllowances"
                   name="otherAllowances"
                   value={inputs.otherAllowances}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                 />
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Other Income (₹)</label>
+                <label htmlFor="otherIncome" className="block text-gray-700 mb-2">Other Income (₹)</label>
                 <input
                   type="number"
+                  id="otherIncome"
                   name="otherIncome"
                   value={inputs.otherIncome}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                 />
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Rent Paid (₹)</label>
+                <label htmlFor="rentPaid" className="block text-gray-700 mb-2">Rent Paid (₹)</label>
                 <input
                   type="number"
+                  id="rentPaid"
                   name="rentPaid"
                   value={inputs.rentPaid}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                 />
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">City Type</label>
+                <label htmlFor="cityType" className="block text-gray-700 mb-2">City Type</label>
                 <select
+                  id="cityType"
                   name="cityType"
                   value={inputs.cityType}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
                 >
                   <option value="metro">Metro City</option>
                   <option value="non-metro">Non-Metro City</option>
@@ -251,66 +249,81 @@ export default function TaxCalculator() {
             </div>
             
             <div>
-              <h2 className="text-xl font-semibold mb-4 text-secondary">Deductions & Exemptions</h2>
+              <h3 className="text-xl font-semibold mb-4 text-secondary">Deductions & Exemptions</h3>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Section 80C (₹) - Max {MAX_80C.toLocaleString()}</label>
+                <label htmlFor="section80C" className="block text-gray-700 mb-2">Section 80C (₹) - Max {MAX_80C.toLocaleString()}</label>
                 <input
                   type="number"
+                  id="section80C"
                   name="section80C"
                   value={inputs.section80C}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                   max={MAX_80C}
                 />
+                <p className="text-sm text-gray-500 mt-1">Includes PPF, ELSS, EPF, NPS, Tax-saving FDs</p>
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Section 80D - Self & Family (₹) - Max {MAX_80D_SELF.toLocaleString()}</label>
+                <label htmlFor="section80D_self" className="block text-gray-700 mb-2">Section 80D - Self & Family (₹) - Max {MAX_80D_SELF.toLocaleString()}</label>
                 <input
                   type="number"
+                  id="section80D_self"
                   name="section80D_self"
                   value={inputs.section80D_self}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                   max={MAX_80D_SELF}
                 />
+                <p className="text-sm text-gray-500 mt-1">Health insurance premiums for yourself and family</p>
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Section 80D - Parents (₹) - Max {MAX_80D_PARENTS.toLocaleString()}</label>
+                <label htmlFor="section80D_parents" className="block text-gray-700 mb-2">Section 80D - Parents (₹) - Max {MAX_80D_PARENTS.toLocaleString()}</label>
                 <input
                   type="number"
+                  id="section80D_parents"
                   name="section80D_parents"
                   value={inputs.section80D_parents}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                   max={MAX_80D_PARENTS}
                 />
+                <p className="text-sm text-gray-500 mt-1">Health insurance premiums for parents (₹50,000 for senior citizens)</p>
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">NPS Additional (₹) - Max {MAX_NPS_ADDITIONAL.toLocaleString()}</label>
+                <label htmlFor="nps" className="block text-gray-700 mb-2">NPS Additional (₹) - Max {MAX_NPS_ADDITIONAL.toLocaleString()}</label>
                 <input
                   type="number"
+                  id="nps"
                   name="nps"
                   value={inputs.nps}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                   max={MAX_NPS_ADDITIONAL}
                 />
+                <p className="text-sm text-gray-500 mt-1">Additional NPS contribution under Section 80CCD(1B)</p>
               </div>
               
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Home Loan Interest (₹) - Max 2,00,000</label>
+                <label htmlFor="homeLoanInterest" className="block text-gray-700 mb-2">Home Loan Interest (₹) - Max 2,00,000</label>
                 <input
                   type="number"
+                  id="homeLoanInterest"
                   name="homeLoanInterest"
                   value={inputs.homeLoanInterest}
                   onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  min="0"
                   max={200000}
                 />
+                <p className="text-sm text-gray-500 mt-1">Interest paid on home loan under Section 24(b)</p>
               </div>
             </div>
           </div>
@@ -318,17 +331,23 @@ export default function TaxCalculator() {
           <div className="mt-6">
             <button 
               type="submit" 
-              className="bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-dark transition"
+              className={`px-6 py-3 rounded-lg font-medium transition ${
+                isCalculating 
+                  ? 'bg-gray-400 cursor-not-allowed text-white' 
+                  : 'bg-primary text-white hover:bg-primary-dark'
+              }`}
+              disabled={isCalculating}
+              aria-busy={isCalculating}
             >
-              Calculate Tax
+              {isCalculating ? 'Calculating...' : 'Calculate My Tax Savings'}
             </button>
           </div>
         </form>
       </div>
       
       {showResults && results && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-primary">Tax Calculation Results</h2>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8" aria-live="polite">
+          <h2 className="text-2xl font-semibold mb-4 text-primary">Your Personalized Tax Analysis</h2>
           
           <div className="grid md:grid-cols-2 gap-6">
             <div>
@@ -367,37 +386,58 @@ export default function TaxCalculator() {
           </div>
           
           <div className="mt-6 bg-blue-50 p-4 rounded-lg">
-            <h3 className="text-xl font-semibold text-primary mb-2">Recommendation</h3>
-            <p>
-              Based on your inputs, the <span className="font-bold">{results.bestRegime === 'old' ? 'Old' : 'New'} Tax Regime</span> is 
-              better for you, saving you ₹{results.savings.toLocaleString()} in taxes.
+            <h3 className="text-xl font-semibold text-primary mb-2">Tax Expert Recommendation</h3>
+            <p className="mb-3">
+              Based on your financial profile, the <span className="font-bold text-blue-700">{results.bestRegime === 'old' ? 'Old' : 'New'} Tax Regime</span> is 
+              better for you, saving you <span className="font-bold text-green-600">₹{results.savings.toLocaleString()}</span> in taxes.
             </p>
+            
+            {/* Special note for income under 7L in new regime */}
+            {results.bestRegime === 'new' && results.grossTotalIncome <= 700000 && (
+              <div className="bg-green-100 p-3 rounded-lg mb-3 border-l-4 border-green-500">
+                <p className="font-semibold text-green-800">
+                  Good news! Under the New Regime, you qualify for the Section 87A rebate. Your tax liability is ZERO!
+                </p>
+              </div>
+            )}
             
             {results.bestRegime === 'old' && (
               <div className="mt-4">
-                <h4 className="font-semibold mb-2">Tax Saving Recommendations:</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {inputs.section80C < MAX_80C && (
-                    <li>Consider investing ₹{(MAX_80C - inputs.section80C).toLocaleString()} more in Section 80C instruments like ELSS, PPF, or NPS.</li>
-                  )}
-                  {inputs.section80D_self < MAX_80D_SELF && (
-                    <li>You can claim up to ₹{(MAX_80D_SELF - inputs.section80D_self).toLocaleString()} more for health insurance premiums for self and family.</li>
-                  )}
-                  {inputs.section80D_parents < MAX_80D_PARENTS && (
-                    <li>Consider getting health insurance for parents to claim additional deduction up to ₹{(MAX_80D_PARENTS - inputs.section80D_parents).toLocaleString()}.</li>
-                  )}
-                  {inputs.nps < MAX_NPS_ADDITIONAL && (
-                    <li>Invest ₹{(MAX_NPS_ADDITIONAL - inputs.nps).toLocaleString()} more in NPS to get additional tax benefit under Section 80CCD(1B).</li>
-                  )}
+                <h4 className="font-semibold mb-2">Personalized Tax Saving Recommendations:</h4>
+                <ul className="list-disc pl-5 space-y-2" role="list">
+                  {taxSavingRecommendations.map((recommendation, index) => (
+                    <li key={index} className="text-gray-800">
+                      {recommendation}
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
             
             {results.bestRegime === 'new' && (
               <div className="mt-4">
-                <p>Under the new tax regime, most deductions aren't available, but you benefit from lower tax rates.</p>
+                <h4 className="font-semibold mb-2">New Tax Regime Insights:</h4>
+                <p className="mb-2">Under the new tax regime, most deductions aren't available, but you benefit from lower tax rates and simplified compliance.</p>
+                <ul className="list-disc pl-5 space-y-1" role="list">
+                  <li>No need to make tax-saving investments</li>
+                  <li>Simplified tax filing with fewer deductions to track</li>
+                  <li>Lower tax rates compensate for the lack of deductions</li>
+                  {inputs.basicSalary > 500000 && inputs.basicSalary < 1500000 && (
+                    <li className="text-blue-700 font-semibold">You fall in the income bracket where the New Regime often benefits salaried employees</li>
+                  )}
+                </ul>
               </div>
             )}
+            
+            <div className="mt-6 pt-4 border-t border-blue-200">
+              <h4 className="font-semibold mb-2">Next Steps:</h4>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Review your current investments and adjust based on recommendations</li>
+                <li>Consult with your employer about salary structure optimization</li>
+                <li>Update your tax declaration form with HR department</li>
+                <li>Keep all receipts and proofs for deductions claimed</li>
+              </ol>
+            </div>
           </div>
         </div>
       )}
