@@ -7,6 +7,7 @@ const Chat = require('../models/chat.model');
 const { generateCompletion, generateStreamingCompletion, fallbackToLocalModel } = require('../config/openai');
 const { getRedisClient } = require('../config/database');
 const { ApiError } = require('../middleware/error.middleware');
+import openaiService from '../services/openai.service.js';
 
 /**
  * Send a message to the chatbot and get a response
@@ -48,36 +49,55 @@ exports.sendMessage = async (req, res, next) => {
     const contextMessages = chat.getContextMessages(10);
 
     try {
-      // Generate AI response
-      const completion = await generateCompletion(
-        message,
-        {
-          previousMessages: contextMessages,
-          taxContext: chat.taxContext
-        }
-      );
+      // Check if user requested streaming response
+      const streamResponse = req.query.stream === 'true';
 
-      const aiResponse = completion.choices[0].message.content;
+      // Get tax regime (default to 'new' if not specified)
+      const taxRegime = req.body.taxRegime || 'new';
 
-      // Add AI response to chat
-      await chat.addMessage('assistant', aiResponse);
-
-      // If this is a new chat, generate a title based on first message
-      if (!chatId) {
-        await chat.updateTitle();
+      if (streamResponse) {
+        // Use streaming response
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        
+        // Start streaming the AI response
+        await openaiService.streamAIResponse(message, taxRegime, res);
+        
+        // The response is ended within the service
+      } else {
+        // Generate non-streaming response
+        const aiResponse = await openaiService.generateAIResponse(message, taxRegime);
+        
+        // Save message to history
+        const newMessage = new Message({
+          chatId: chat._id,
+          content: message,
+          role: 'user',
+        });
+        
+        await newMessage.save();
+        
+        // Save AI response to history
+        const aiResponseMessage = new Message({
+          chatId: chat._id,
+          content: aiResponse.data.message,
+          role: 'assistant',
+        });
+        
+        await aiResponseMessage.save();
+        
+        // Update chat's lastActive timestamp
+        await Chat.findByIdAndUpdate(chat._id, { lastActive: Date.now() });
+        
+        res.status(200).json({
+          success: true,
+          data: {
+            message: aiResponse.data.message,
+            isFallback: aiResponse.data.isFallback || false
+          }
+        });
       }
-
-      // Save the chat
-      await chat.save();
-
-      // Return response
-      res.status(200).json({
-        success: true,
-        data: {
-          message: aiResponse,
-          chatId: chat._id
-        }
-      });
     } catch (error) {
       console.error('AI generation error:', error);
 
@@ -340,36 +360,33 @@ exports.regenerateResponse = async (req, res, next) => {
     // Get context for AI
     const contextMessages = chat.getContextMessages(10);
 
-    // Generate new AI response
-    try {
-      const completion = await generateCompletion(
-        lastUserMessage,
-        {
-          previousMessages: contextMessages,
-          taxContext: chat.taxContext
-        },
-        false // Skip cache for regeneration
-      );
+    // Get tax regime from chat or default to 'new'
+    const taxRegime = chat.metadata?.taxRegime || 'new';
 
-      const aiResponse = completion.choices[0].message.content;
-
-      // Add new AI response to chat
-      await chat.addMessage('assistant', aiResponse);
-      await chat.save();
-
-      // Return response
-      res.status(200).json({
-        success: true,
-        data: {
-          message: aiResponse,
-          chatId: chat._id
-        }
-      });
-    } catch (error) {
-      console.error('AI regeneration error:', error);
-      return next(new ApiError('Failed to regenerate response', 500));
-    }
+    // Use the OpenAI service to regenerate the response
+    const aiResponse = await openaiService.generateAIResponse(lastUserMessage, taxRegime);
+    
+    // Update the AI message with the new content
+    const aiResponseMessage = new Message({
+      chatId: chat._id,
+      content: aiResponse.data.message,
+      role: 'assistant',
+    });
+    
+    await aiResponseMessage.save();
+    
+    // Update chat's lastActive timestamp
+    await Chat.findByIdAndUpdate(chat._id, { lastActive: Date.now() });
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        message: aiResponse.data.message,
+        isFallback: aiResponse.data.isFallback || false
+      }
+    });
   } catch (error) {
-    next(error);
+    console.error('AI regeneration error:', error);
+    return next(new ApiError('Failed to regenerate response', 500));
   }
 }; 
