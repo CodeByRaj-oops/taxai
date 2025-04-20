@@ -1,135 +1,85 @@
-# Tax AI Chat Application
+# Tax AI Advisor
 
-A Flask-based API that integrates with OpenAI to provide tax-related advice and analysis for Indian tax regimes.
+An AI-powered tax consultation platform that helps Indian taxpayers make informed decisions about tax regimes, deductions, and savings opportunities.
 
-## Features
+## ✨ Features
 
-- OpenAI integration for tax consultation
-- Input validation using Pydantic
-- Rate limiting to prevent abuse
-- Detailed logging
-- Standardized error handling
-- Environment-based configuration
+- 🤖 Ask tax-related questions in natural language
+- 📊 Compare old and new tax regimes with personalized analysis
+- 💸 Get actionable advice to maximize tax savings
+- 🚀 Real-time responses powered by OpenAI
+- 🔒 Secure handling of financial data
+- 📱 Responsive design for all devices
 
-## Project Structure
+## 📸 Demo
 
-```
-tax-ai-chat/
-├── app/
-│   ├── __init__.py        # Application factory and configuration
-│   ├── routes.py          # API endpoint definitions
-│   ├── openai_client.py   # OpenAI API integration
-│   ├── utils.py           # Helper functions
-│   └── schemas.py         # Pydantic validation schemas
-├── .env                   # Environment variables (not committed to version control)
-├── requirements.txt       # Project dependencies
-├── run.py                 # Application entry point
-└── README.md              # Project documentation
-```
+![Application Demo](./demo-placeholder.gif)
+*Demo screenshot coming soon*
 
-## Setup
+## 🚀 Getting Started
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/tax-ai-chat.git
-   cd tax-ai-chat
+### Prerequisites
+- Node.js 16.x or higher
+- npm or yarn
+
+### Installation
+
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/tax-ai-advisor.git
+   cd tax-ai-advisor
    ```
 
-2. Create a virtual environment and activate it:
-   ```
-   python -m venv venv
-   # On Windows
-   venv\Scripts\activate
-   # On macOS/Linux
-   source venv/bin/activate
+2. Install the dependencies
+   ```bash
+   npm install
+   # or
+   yarn install
    ```
 
-3. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-
-4. Create `.env` file with your configuration:
-   ```
-   cp .env.example .env
-   # Edit .env with your OpenAI API key and other settings
+3. Set up your environment variables
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local and add your OpenAI API key
    ```
 
-5. Run the application:
+4. Start the development server
+   ```bash
+   npm run dev
+   # or
+   yarn dev
    ```
-   python run.py
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## 💻 Tech Stack
+
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+
+## 🌐 Deployed Application
+
+Try the application live at: [https://tax-ai-advisor.vercel.app](https://tax-ai-advisor.vercel.app) *(coming soon)*
+
+## 🔑 Setting Up OpenAI API Key
+
+This application requires an OpenAI API key to function properly:
+
+1. Create an account at [OpenAI](https://platform.openai.com/signup)
+2. Generate an API key in your dashboard
+3. Add your API key to the `.env.local` file:
+   ```
+   OPENAI_API_KEY=your_api_key_goes_here
    ```
 
-## API Endpoints
+## 🔒 Security Note
 
-### Health Check
-```
-GET /api/health
-```
-Returns the status of the API.
+Your OpenAI API key should be kept confidential. Never commit your `.env.local` file to version control or share your API key publicly.
 
-### Chat
-```
-POST /api/chat
-```
-Send a tax-related question and optionally include tax calculation data for context.
+## 📄 License
 
-#### Request Body
-```json
-{
-  "message": "Should I choose the old or new tax regime?",
-  "taxData": {
-    "taxInputs": {
-      "basicSalary": 1000000,
-      "hra": 500000,
-      "specialAllowance": 200000,
-      "section80C": 150000,
-      "section80D_self": 25000
-    },
-    "taxResults": {
-      "oldRegime": {
-        "taxAmount": 140000
-      },
-      "newRegime": {
-        "taxAmount": 160000
-      },
-      "bestRegime": "old",
-      "totalSavings": 20000
-    }
-  }
-}
-```
-
-#### Response
-```json
-{
-  "status": "success",
-  "data": {
-    "reply": "Based on your financial situation, I recommend choosing the old tax regime..."
-  }
-}
-```
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| FLASK_APP | Flask application entry point | run.py |
-| FLASK_ENV | Application environment | development |
-| PORT | Server port | 3001 |
-| SECRET_KEY | Secret key for Flask | your-secret-key-here |
-| OPENAI_API_KEY | OpenAI API key | None |
-| OPENAI_MODEL | OpenAI model to use | gpt-4 |
-| MAX_TOKENS | Maximum tokens for OpenAI responses | 1000 |
-| TEMPERATURE | Temperature setting for responses | 0.7 |
-
-## Testing
-
-Run tests with pytest:
-```
-pytest
-```
-
-## License
-
-MIT 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
