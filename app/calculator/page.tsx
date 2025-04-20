@@ -2,14 +2,16 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { 
-  TaxInputs,
-  TaxResults,
+  TaxCalculationInput,
+  TaxResult,
   calculateTaxLiability,
-  getTaxSavingRecommendations,
+  generateTaxSavingRecommendations,
   MAX_80C,
   MAX_80D_SELF,
   MAX_80D_PARENTS,
-  MAX_NPS_ADDITIONAL
+  MAX_NPS_ADDITIONAL,
+  OLD_TAX_BRACKETS,
+  NEW_TAX_BRACKETS
 } from '@/utils/taxCalculations';
 
 // Tax brackets for new tax regime 2025 (hypothetical)
@@ -42,23 +44,23 @@ const MAX_HRA_PERCENT = 0.5; // 50% of basic salary
  */
 export default function TaxCalculator() {
   // State for form inputs
-  const [inputs, setInputs] = useState<TaxInputs>({
+  const [inputs, setInputs] = useState<TaxCalculationInput>({
     basicSalary: 0,
     hra: 0,
     lta: 0,
-    otherAllowances: 0,
+    specialAllowance: 0,
+    otherIncome: 0,
     rentPaid: 0,
     cityType: 'metro',
     section80C: 0,
     section80D_self: 0,
     section80D_parents: 0,
     nps: 0,
-    otherIncome: 0,
     homeLoanInterest: 0
   });
 
   // State for calculation results and errors
-  const [results, setResults] = useState<TaxResults | null>(null);
+  const [results, setResults] = useState<TaxResult | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -120,7 +122,7 @@ export default function TaxCalculator() {
   // Calculate tax saving recommendations based on inputs
   const taxSavingRecommendations = useMemo(() => {
     if (!results) return [];
-    return getTaxSavingRecommendations(inputs);
+    return generateTaxSavingRecommendations(inputs);
   }, [results, inputs]);
 
   return (
@@ -154,97 +156,143 @@ export default function TaxCalculator() {
               <h3 className="text-xl font-semibold mb-4 text-primary">Income Details</h3>
               
               <div className="mb-4">
-                <label htmlFor="basicSalary" className="block text-gray-700 mb-2">Basic Salary (₹)</label>
-                <input
-                  type="number"
-                  id="basicSalary"
-                  name="basicSalary"
-                  value={inputs.basicSalary}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                  aria-describedby="basicSalary-help"
-                />
-                <p id="basicSalary-help" className="text-xs text-gray-500 mt-1">Enter your annual basic salary component</p>
+                <label htmlFor="basicSalary" className="block text-gray-700 mb-2 font-medium">Basic Salary (₹) <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="basicSalary"
+                    name="basicSalary"
+                    value={inputs.basicSalary}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    max="100000000"
+                    step="1000"
+                    placeholder="Enter your annual basic salary"
+                    required
+                    aria-describedby="basicSalary-help"
+                  />
+                </div>
+                <p id="basicSalary-help" className="text-xs text-gray-500 mt-1">Enter your annual basic salary component (mandatory field)</p>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="hra" className="block text-gray-700 mb-2">HRA Received (₹)</label>
-                <input
-                  type="number"
-                  id="hra"
-                  name="hra"
-                  value={inputs.hra}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                />
+                <label htmlFor="hra" className="block text-gray-700 mb-2 font-medium">HRA Received (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="hra"
+                    name="hra"
+                    value={inputs.hra}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    max="50000000"
+                    step="1000"
+                    placeholder="House Rent Allowance"
+                    aria-describedby="hra-help"
+                  />
+                </div>
+                <p id="hra-help" className="text-xs text-gray-500 mt-1">House Rent Allowance received from your employer</p>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="lta" className="block text-gray-700 mb-2">LTA (₹)</label>
-                <input
-                  type="number"
-                  id="lta"
-                  name="lta"
-                  value={inputs.lta}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                />
+                <label htmlFor="lta" className="block text-gray-700 mb-2 font-medium">LTA (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="lta"
+                    name="lta"
+                    value={inputs.lta}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    step="1000"
+                    placeholder="Leave Travel Allowance"
+                    aria-describedby="lta-help"
+                  />
+                </div>
+                <p id="lta-help" className="text-xs text-gray-500 mt-1">Leave Travel Allowance component of your salary</p>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="otherAllowances" className="block text-gray-700 mb-2">Other Allowances (₹)</label>
-                <input
-                  type="number"
-                  id="otherAllowances"
-                  name="otherAllowances"
-                  value={inputs.otherAllowances}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                />
+                <label htmlFor="specialAllowance" className="block text-gray-700 mb-2 font-medium">Special Allowance (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="specialAllowance"
+                    name="specialAllowance"
+                    value={inputs.specialAllowance}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    step="1000"
+                    placeholder="Special allowance, etc."
+                    aria-describedby="specialAllowance-help"
+                  />
+                </div>
+                <p id="specialAllowance-help" className="text-xs text-gray-500 mt-1">Special allowance, conveyance, and other salary components</p>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="otherIncome" className="block text-gray-700 mb-2">Other Income (₹)</label>
-                <input
-                  type="number"
-                  id="otherIncome"
-                  name="otherIncome"
-                  value={inputs.otherIncome}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                />
+                <label htmlFor="otherIncome" className="block text-gray-700 mb-2 font-medium">Other Income (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="otherIncome"
+                    name="otherIncome"
+                    value={inputs.otherIncome}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    step="1000"
+                    placeholder="Rental income, interest, etc."
+                    aria-describedby="otherIncome-help"
+                  />
+                </div>
+                <p id="otherIncome-help" className="text-xs text-gray-500 mt-1">Income from other sources like rent, interest, or capital gains</p>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="rentPaid" className="block text-gray-700 mb-2">Rent Paid (₹)</label>
-                <input
-                  type="number"
-                  id="rentPaid"
-                  name="rentPaid"
-                  value={inputs.rentPaid}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                />
+                <label htmlFor="rentPaid" className="block text-gray-700 mb-2 font-medium">Rent Paid (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="rentPaid"
+                    name="rentPaid"
+                    value={inputs.rentPaid}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    step="1000"
+                    placeholder="Annual rent paid"
+                    aria-describedby="rentPaid-help"
+                  />
+                </div>
+                <p id="rentPaid-help" className="text-xs text-gray-500 mt-1">Total annual rent paid for your accommodation</p>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="cityType" className="block text-gray-700 mb-2">City Type</label>
+                <label htmlFor="cityType" className="block text-gray-700 mb-2 font-medium">City Type <span className="text-red-500">*</span></label>
                 <select
                   id="cityType"
                   name="cityType"
                   value={inputs.cityType}
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                  required
+                  aria-describedby="cityType-help"
                 >
                   <option value="metro">Metro City</option>
                   <option value="non-metro">Non-Metro City</option>
                 </select>
+                <p id="cityType-help" className="text-xs text-gray-500 mt-1">Metro cities: Delhi, Mumbai, Kolkata, Chennai, Bangalore, Hyderabad</p>
               </div>
             </div>
             
@@ -252,78 +300,123 @@ export default function TaxCalculator() {
               <h3 className="text-xl font-semibold mb-4 text-secondary">Deductions & Exemptions</h3>
               
               <div className="mb-4">
-                <label htmlFor="section80C" className="block text-gray-700 mb-2">Section 80C (₹) - Max {MAX_80C.toLocaleString()}</label>
-                <input
-                  type="number"
-                  id="section80C"
-                  name="section80C"
-                  value={inputs.section80C}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                  max={MAX_80C}
-                />
-                <p className="text-sm text-gray-500 mt-1">Includes PPF, ELSS, EPF, NPS, Tax-saving FDs</p>
+                <label htmlFor="section80C" className="block text-gray-700 mb-2 font-medium">Section 80C (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="section80C"
+                    name="section80C"
+                    value={inputs.section80C}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    max={MAX_80C}
+                    step="1000"
+                    placeholder={`Max limit: ₹${MAX_80C.toLocaleString()}`}
+                    aria-describedby="section80C-help"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <p id="section80C-help" className="text-xs text-gray-500 mt-1">PPF, ELSS, EPF, Life Insurance, etc.</p>
+                  <p className="text-xs text-blue-600 mt-1">Max: ₹{MAX_80C.toLocaleString()}</p>
+                </div>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="section80D_self" className="block text-gray-700 mb-2">Section 80D - Self & Family (₹) - Max {MAX_80D_SELF.toLocaleString()}</label>
-                <input
-                  type="number"
-                  id="section80D_self"
-                  name="section80D_self"
-                  value={inputs.section80D_self}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                  max={MAX_80D_SELF}
-                />
-                <p className="text-sm text-gray-500 mt-1">Health insurance premiums for yourself and family</p>
+                <label htmlFor="section80D_self" className="block text-gray-700 mb-2 font-medium">Health Insurance - Self & Family (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="section80D_self"
+                    name="section80D_self"
+                    value={inputs.section80D_self}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    max={MAX_80D_SELF}
+                    step="500"
+                    placeholder={`Max limit: ₹${MAX_80D_SELF.toLocaleString()}`}
+                    aria-describedby="section80D_self-help"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <p id="section80D_self-help" className="text-xs text-gray-500 mt-1">Health insurance for yourself and family</p>
+                  <p className="text-xs text-blue-600 mt-1">Max: ₹{MAX_80D_SELF.toLocaleString()}</p>
+                </div>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="section80D_parents" className="block text-gray-700 mb-2">Section 80D - Parents (₹) - Max {MAX_80D_PARENTS.toLocaleString()}</label>
-                <input
-                  type="number"
-                  id="section80D_parents"
-                  name="section80D_parents"
-                  value={inputs.section80D_parents}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                  max={MAX_80D_PARENTS}
-                />
-                <p className="text-sm text-gray-500 mt-1">Health insurance premiums for parents (₹50,000 for senior citizens)</p>
+                <label htmlFor="section80D_parents" className="block text-gray-700 mb-2 font-medium">Health Insurance - Parents (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="section80D_parents"
+                    name="section80D_parents"
+                    value={inputs.section80D_parents}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    max={MAX_80D_PARENTS}
+                    step="500"
+                    placeholder={`Max limit: ₹${MAX_80D_PARENTS.toLocaleString()}`}
+                    aria-describedby="section80D_parents-help"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <p id="section80D_parents-help" className="text-xs text-gray-500 mt-1">Health insurance for parents</p>
+                  <p className="text-xs text-blue-600 mt-1">Max: ₹{MAX_80D_PARENTS.toLocaleString()}</p>
+                </div>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="nps" className="block text-gray-700 mb-2">NPS Additional (₹) - Max {MAX_NPS_ADDITIONAL.toLocaleString()}</label>
-                <input
-                  type="number"
-                  id="nps"
-                  name="nps"
-                  value={inputs.nps}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                  max={MAX_NPS_ADDITIONAL}
-                />
-                <p className="text-sm text-gray-500 mt-1">Additional NPS contribution under Section 80CCD(1B)</p>
+                <label htmlFor="nps" className="block text-gray-700 mb-2 font-medium">NPS Additional (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="nps"
+                    name="nps"
+                    value={inputs.nps}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    max={MAX_NPS_ADDITIONAL}
+                    step="1000"
+                    placeholder={`Max limit: ₹${MAX_NPS_ADDITIONAL.toLocaleString()}`}
+                    aria-describedby="nps-help"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <p id="nps-help" className="text-xs text-gray-500 mt-1">NPS contribution u/s 80CCD(1B)</p>
+                  <p className="text-xs text-blue-600 mt-1">Max: ₹{MAX_NPS_ADDITIONAL.toLocaleString()}</p>
+                </div>
               </div>
               
               <div className="mb-4">
-                <label htmlFor="homeLoanInterest" className="block text-gray-700 mb-2">Home Loan Interest (₹) - Max 2,00,000</label>
-                <input
-                  type="number"
-                  id="homeLoanInterest"
-                  name="homeLoanInterest"
-                  value={inputs.homeLoanInterest}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
-                  min="0"
-                  max={200000}
-                />
-                <p className="text-sm text-gray-500 mt-1">Interest paid on home loan under Section 24(b)</p>
+                <label htmlFor="homeLoanInterest" className="block text-gray-700 mb-2 font-medium">Home Loan Interest (₹)</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    id="homeLoanInterest"
+                    name="homeLoanInterest"
+                    value={inputs.homeLoanInterest}
+                    onChange={handleInputChange}
+                    className="w-full p-2 pl-8 border rounded focus:ring-2 focus:ring-primary focus:outline-none"
+                    min="0"
+                    max={200000}
+                    step="1000"
+                    placeholder="Max limit: ₹2,00,000"
+                    aria-describedby="homeLoanInterest-help"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <p id="homeLoanInterest-help" className="text-xs text-gray-500 mt-1">Interest paid on home loan u/s 24(b)</p>
+                  <p className="text-xs text-blue-600 mt-1">Max: ₹2,00,000</p>
+                </div>
               </div>
             </div>
           </div>
@@ -334,7 +427,7 @@ export default function TaxCalculator() {
               className={`px-6 py-3 rounded-lg font-medium transition ${
                 isCalculating 
                   ? 'bg-gray-400 cursor-not-allowed text-white' 
-                  : 'bg-primary text-white hover:bg-primary-dark'
+                  : 'bg-primary text-white hover:bg-primary-dark shadow-md hover:shadow-lg'
               }`}
               disabled={isCalculating}
               aria-busy={isCalculating}
@@ -351,35 +444,37 @@ export default function TaxCalculator() {
           
           <div className="grid md:grid-cols-2 gap-6">
             <div>
+              <h3 className="text-lg font-semibold mb-3 text-primary">Old Tax Regime</h3>
               <dl className="space-y-2">
                 <div className="flex justify-between py-2 border-b">
-                  <dt>Gross Total Income:</dt>
-                  <dd className="font-semibold">₹{results.grossTotalIncome.toLocaleString()}</dd>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <dt>Total Deductions:</dt>
-                  <dd className="font-semibold">₹{results.totalDeductions.toLocaleString()}</dd>
-                </div>
-                <div className="flex justify-between py-2 border-b">
                   <dt>Taxable Income:</dt>
-                  <dd className="font-semibold">₹{results.taxableIncome.toLocaleString()}</dd>
+                  <dd className="font-semibold">₹{results.oldRegime.taxableIncome.toLocaleString()}</dd>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <dt>Tax Amount:</dt>
+                  <dd className="font-semibold">₹{results.oldRegime.taxAmount.toLocaleString()}</dd>
+                </div>
+                <div className="flex justify-between py-2 border-b">
+                  <dt>In-hand Income:</dt>
+                  <dd className="font-semibold">₹{results.oldRegime.inHandAmount.toLocaleString()}</dd>
                 </div>
               </dl>
             </div>
             
             <div>
+              <h3 className="text-lg font-semibold mb-3 text-secondary">New Tax Regime</h3>
               <dl className="space-y-2">
                 <div className="flex justify-between py-2 border-b">
-                  <dt>Tax (Old Regime):</dt>
-                  <dd className="font-semibold">₹{results.taxLiabilityOld.toLocaleString()}</dd>
+                  <dt>Taxable Income:</dt>
+                  <dd className="font-semibold">₹{results.newRegime.taxableIncome.toLocaleString()}</dd>
                 </div>
                 <div className="flex justify-between py-2 border-b">
-                  <dt>Tax (New Regime):</dt>
-                  <dd className="font-semibold">₹{results.taxLiabilityNew.toLocaleString()}</dd>
+                  <dt>Tax Amount:</dt>
+                  <dd className="font-semibold">₹{results.newRegime.taxAmount.toLocaleString()}</dd>
                 </div>
-                <div className="flex justify-between py-2 border-b text-green-600">
-                  <dt>You Save:</dt>
-                  <dd className="font-semibold">₹{results.savings.toLocaleString()}</dd>
+                <div className="flex justify-between py-2 border-b">
+                  <dt>In-hand Income:</dt>
+                  <dd className="font-semibold">₹{results.newRegime.inHandAmount.toLocaleString()}</dd>
                 </div>
               </dl>
             </div>
@@ -389,11 +484,11 @@ export default function TaxCalculator() {
             <h3 className="text-xl font-semibold text-primary mb-2">Tax Expert Recommendation</h3>
             <p className="mb-3">
               Based on your financial profile, the <span className="font-bold text-blue-700">{results.bestRegime === 'old' ? 'Old' : 'New'} Tax Regime</span> is 
-              better for you, saving you <span className="font-bold text-green-600">₹{results.savings.toLocaleString()}</span> in taxes.
+              better for you, saving you <span className="font-bold text-green-600">₹{results.totalSavings.toLocaleString()}</span> in taxes.
             </p>
             
             {/* Special note for income under 7L in new regime */}
-            {results.bestRegime === 'new' && results.grossTotalIncome <= 700000 && (
+            {results.bestRegime === 'new' && (inputs.basicSalary + inputs.specialAllowance + inputs.lta + inputs.otherIncome) <= 700000 && (
               <div className="bg-green-100 p-3 rounded-lg mb-3 border-l-4 border-green-500">
                 <p className="font-semibold text-green-800">
                   Good news! Under the New Regime, you qualify for the Section 87A rebate. Your tax liability is ZERO!
