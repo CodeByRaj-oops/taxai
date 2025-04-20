@@ -13,6 +13,7 @@ import {
   OLD_TAX_BRACKETS,
   NEW_TAX_BRACKETS
 } from '@/utils/taxCalculations';
+import { formatCurrencyInWords } from '@/utils/formatters';
 
 // Tax brackets for new tax regime 2025 (hypothetical)
 const NEW_TAX_REGIME = [
@@ -64,6 +65,11 @@ export default function TaxCalculator() {
   const [showResults, setShowResults] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Get the salary in words
+  const basicSalaryInWords = useMemo(() => {
+    return formatCurrencyInWords(inputs.basicSalary);
+  }, [inputs.basicSalary]);
 
   /**
    * Handle input changes in form fields
@@ -175,6 +181,11 @@ export default function TaxCalculator() {
                   />
                 </div>
                 <p id="basicSalary-help" className="text-xs text-gray-500 mt-1">Enter your annual basic salary component (mandatory field)</p>
+                {inputs.basicSalary > 0 && (
+                  <p className="text-sm text-blue-600 mt-1 font-medium">
+                    {basicSalaryInWords}
+                  </p>
+                )}
               </div>
               
               <div className="mb-4">
