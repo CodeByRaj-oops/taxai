@@ -17,52 +17,6 @@ export default function TaxAnalysisPrompt({
 }: TaxAnalysisPromptProps) {
   const [customPrompt, setCustomPrompt] = useState('');
   
-  // Pre-defined prompt suggestions based on the tax results
-  const getSuggestedPrompts = (): string[] => {
-    const prompts = [
-      `Explain why the ${taxResults.bestRegime === 'old' ? 'Old' : 'New'} regime is better for me in simple terms`,
-      "What strategies can I use to reduce my tax liability further?",
-      "How can I optimize my salary structure for better tax efficiency?",
-    ];
-    
-    // Add regime-specific prompts
-    if (taxResults.bestRegime === 'old') {
-      prompts.push(
-        "Which Section 80C investments would give the best returns?",
-        "Should I increase my HRA component in my salary?",
-        `Is it worth investing in NPS beyond the ${config.formatCurrency(config.tax.limits.section80C)} 80C limit?`
-      );
-    } else {
-      prompts.push(
-        "What are the disadvantages of choosing the New regime?",
-        "When should I consider switching back to the Old regime?",
-        "How will the New regime affect my retirement planning?"
-      );
-    }
-    
-    // Salary-level specific prompts
-    const totalIncome = taxResults.oldRegime.inHandAmount + taxResults.oldRegime.taxAmount;
-    if (totalIncome < 1000000) {
-      prompts.push("What tax benefits are available for low-income individuals?");
-    } else if (totalIncome >= 1000000 && totalIncome < 2000000) {
-      prompts.push("What tax planning strategies work best for middle-income earners?");
-    } else {
-      prompts.push(
-        "What are the most effective tax planning strategies for high-income earners?",
-        "Should I consider setting up an HUF for tax planning?"
-      );
-    }
-    
-    return prompts;
-  };
-  
-  const promptSuggestions = getSuggestedPrompts();
-  
-  const handlePromptSelection = (prompt: string) => {
-    setCustomPrompt(prompt);
-    onAnalysisRequest(prompt);
-  };
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (customPrompt.trim()) {
@@ -85,29 +39,13 @@ export default function TaxAnalysisPrompt({
         What would you like to know about your tax situation? Get personalized advice based on your tax calculation.
       </p>
       
-      <div className="mb-4">
-        <h4 className="font-medium mb-2 text-gray-700">Suggested Questions:</h4>
-        <div className="flex flex-wrap gap-2">
-          {promptSuggestions.map((prompt, index) => (
-            <button
-              key={index}
-              onClick={() => handlePromptSelection(prompt)}
-              className="bg-white px-3 py-2 rounded-full text-sm border border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
-              disabled={isLoading}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      </div>
-      
       <form onSubmit={handleSubmit} className="mt-4">
         <div className="flex">
           <input
             type="text"
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
-            placeholder="Or ask your own question about your tax calculation..."
+            placeholder="Ask any question about your tax calculation..."
             className="flex-grow p-3 rounded-l-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
             disabled={isLoading}
           />

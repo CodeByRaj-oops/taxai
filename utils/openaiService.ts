@@ -13,27 +13,32 @@ export interface TaxAnalysisResponse {
 }
 
 /**
- * Generates a tax analysis response using OpenAI based on tax data and user prompt
+ * Generates a tax analysis response using OpenAI GPT-4 based on tax data and user prompt
  */
 export async function generateTaxAnalysis(
   { prompt, taxResults, taxInputs }: TaxAnalysisRequest
 ): Promise<TaxAnalysisResponse> {
-  if (!config.features.openAiIntegration || !config.openai.apiKey) {
+  // Check if OpenAI integration is enabled and API key is available
+  if (!config.features.openAiIntegration) {
     return {
       analysis: "",
-      error: "OpenAI integration is not configured. Set ENABLE_OPENAI_INTEGRATION=true and provide a valid API key."
+      error: "OpenAI integration is not enabled. Set ENABLE_OPENAI_INTEGRATION=true in your .env file."
+    };
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return {
+      analysis: "",
+      error: "OpenAI API key is missing. Please add it to your .env file."
     };
   }
 
   try {
-    // Format a system prompt with the tax data
-    const systemPrompt = `
-You are an expert tax consultant specializing in Indian income tax laws. 
-You provide clear, accurate, and personalized advice based on the user's tax calculation data.
-
+    // Prepare context information about the user's tax situation
+    const taxContext = `
 Current tax calculation data:
 - Basic Salary: ${config.formatCurrency(taxInputs.basicSalary || 0)}
-- HRA Received: ${config.formatCurrency(taxInputs.hraReceived || 0)}
+- HRA Received: ${config.formatCurrency(taxInputs.hra || 0)}
 - Special Allowance: ${config.formatCurrency(taxInputs.specialAllowance || 0)}
 - LTA: ${config.formatCurrency(taxInputs.lta || 0)}
 - Other Income: ${config.formatCurrency(taxInputs.otherIncome || 0)}
@@ -42,46 +47,63 @@ Current tax calculation data:
 
 Deductions:
 - Section 80C: ${config.formatCurrency(taxInputs.section80C || 0)}
-- Health Insurance (Self & Family): ${config.formatCurrency(taxInputs.healthInsuranceSelf || 0)}
-- Health Insurance (Parents): ${config.formatCurrency(taxInputs.healthInsuranceParents || 0)}
-- NPS Additional: ${config.formatCurrency(taxInputs.npsAdditional || 0)}
+- Health Insurance (Self & Family): ${config.formatCurrency(taxInputs.section80D_self || 0)}
+- Health Insurance (Parents): ${config.formatCurrency(taxInputs.section80D_parents || 0)}
+- NPS Additional: ${config.formatCurrency(taxInputs.nps || 0)}
 - Home Loan Interest: ${config.formatCurrency(taxInputs.homeLoanInterest || 0)}
 
 Tax Calculation Results:
 - Old Regime Tax: ${config.formatCurrency(taxResults.oldRegime.taxAmount || 0)}
 - New Regime Tax: ${config.formatCurrency(taxResults.newRegime.taxAmount || 0)}
 - Recommended Regime: ${taxResults.bestRegime === 'old' ? 'Old Regime' : 'New Regime'}
-- Tax Savings with Recommended Regime: ${config.formatCurrency(taxResults.savings || 0)}
+- Tax Savings with Recommended Regime: ${config.formatCurrency(taxResults.totalSavings || 0)}
 
 Current Tax Financial Year: ${config.tax.year}
 
-Provide professional advice that is accurate, concise, and relevant to the user's specific situation.
-Avoid generic advice that doesn't apply to their specific tax scenario.
-Where applicable, reference specific sections of the Income Tax Act.
+The user is asking: "${prompt}"
 `;
 
+    // Make the API call to OpenAI chat completions endpoint with GPT-4 model
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${config.openai.apiKey}`
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4",
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
+          { 
+            role: "system", 
+            content: "You are TaxAI, a helpful assistant that explains Indian tax law clearly and concisely." 
+          },
+          { 
+            role: "user", 
+            content: taxContext 
+          }
         ],
-        temperature: 0.5,
-        max_tokens: 600
+        temperature: 0.7,
+        max_tokens: 1000
       })
     });
 
+    // Handle API response errors
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+      const errorData = await response.json();
+      console.error("OpenAI API error details:", errorData);
+      
+      // Handle rate limiting and quota errors specifically
+      if (response.status === 429) {
+        return {
+          analysis: "",
+          error: "Rate limit exceeded. Please try again later."
+        };
+      }
+      
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Status code: ' + response.status}`);
     }
 
+    // Parse and return the AI response
     const data = await response.json();
     return { analysis: data.choices[0].message.content };
   } catch (error) {
