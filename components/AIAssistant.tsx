@@ -80,16 +80,6 @@ export default function AIAssistant() {
   // Handle suggestion clicks
   const handleSuggestionClick = (suggestion: string) => {
     setInput(suggestion);
-    // Optional: Auto submit when clicking a suggestion
-    // const userMessage: Message = {
-    //   id: generateId(),
-    //   content: suggestion,
-    //   type: 'user',
-    //   timestamp: new Date(),
-    // };
-    // setMessages([...messages, userMessage]);
-    // setIsTyping(true);
-    // ...rest of submission logic
   };
 
   // Basic AI response generator (to be replaced with real AI)

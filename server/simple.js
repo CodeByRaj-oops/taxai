@@ -1,1 +1,0 @@
-const express = require('express'); const app = express(); const PORT = 5001; app.get('/', (req, res) = status: 'success', message: 'Simple server is running' })); app.listen(PORT, '0.0.0.0', () = running on http://localhost:${PORT}`)); 

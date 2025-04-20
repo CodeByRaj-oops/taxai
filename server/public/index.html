@@ -1,448 +1,1218 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Indian Tax Consultation System</title>
+  <title>TaxSage 2025 | Indian Tax Consultation System</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
   <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #4338ca;
+      --primary-light: #e0e7ff;
+      --primary-bg: #f5f7ff;
+      --secondary: #10b981;
+      --secondary-dark: #059669;
+      --secondary-light: #d1fae5;
+      --accent: #f97316;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --background: #ffffff;
+      --background-alt: #f8fafc;
+      --border: #e2e8f0;
+      --shadow: rgba(0, 0, 0, 0.1);
+      --shadow-lg: rgba(0, 0, 0, 0.05);
+      --card: #ffffff;
+      --success: #10b981;
+      --warning: #f97316;
+      --error: #ef4444;
+      --info: #3b82f6;
+      --radius-sm: 4px;
+      --radius: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --transition: 0.3s ease;
+      --header-height: 70px;
+    }
+
+    [data-theme="dark"] {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #312e81;
+      --primary-bg: #111827;
+      --text: #f1f5f9;
+      --text-light: #94a3b8;
+      --background: #0f172a;
+      --background-alt: #1e293b;
+      --border: #334155;
+      --shadow: rgba(0, 0, 0, 0.3);
+      --shadow-lg: rgba(0, 0, 0, 0.7);
+      --card: #1e293b;
+    }
+
+    /* Dark mode input enhancements */
+    body.dark-theme input,
+    body.dark-theme select,
+    body.dark-theme textarea,
+    [data-theme="dark"] input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      color: #ffffff !important;
+      background-color: #2a2a2a !important;
+      border-color: #444 !important;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.6;
-      color: #333;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f7fa;
+      color: var(--text);
+      background-color: var(--background);
+      transition: background-color var(--transition), color var(--transition);
+      overflow-x: hidden;
     }
-    .container {
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 30px;
-      margin-top: 20px;
+
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--text);
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 0.5rem;
+      transition: color var(--transition);
     }
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
+
     h1 {
-      color: #1a73e8;
-      margin-bottom: 10px;
-      font-size: 2.5rem;
+      font-size: 2.25rem;
+      letter-spacing: -0.025em;
     }
+
     h2 {
-      font-size: 1.8rem;
-      color: #2c3e50;
+      font-size: 1.75rem;
+      letter-spacing: -0.025em;
     }
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin: 30px 0;
+
+    h3 {
+      font-size: 1.5rem;
     }
-    .feature-card {
-      background-color: #f8f9fa;
-      border-radius: 6px;
-      padding: 20px;
-      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-light);
     }
-    .feature-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: color var(--transition);
     }
-    .feature-card h3 {
-      color: #1a73e8;
-      margin-top: 0;
-      font-size: 1.4rem;
+
+    a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
     }
-    .calculator {
-      background-color: #e8f0fe;
-      border-radius: 8px;
-      padding: 25px;
-      margin: 30px 0;
+
+    /* Layout */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
     }
+
+    .main-layout {
+      padding: 2rem 0;
+      min-height: calc(100vh - var(--header-height));
+    }
+
+    /* Header Styles */
+    .header {
+      background-color: var(--background);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--header-height);
+      padding: 0 1.5rem;
+      transition: background-color var(--transition), border-color var(--transition);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1280px;
+      margin: 0 auto;
+      height: 100%;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    .logo-img {
+      margin-right: 0.75rem;
+      height: 2rem;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 1.25rem;
+      padding: 0.5rem;
+      border-radius: 50%;
+      transition: background-color var(--transition), color var(--transition);
+    }
+
+    .theme-toggle:hover {
+      background-color: var(--primary-light);
+      color: var(--primary);
+    }
+
+    /* Card and Components */
+    .card {
+      background-color: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 6px var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: background-color var(--transition), box-shadow var(--transition);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .steps {
+      display: flex;
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      margin-right: 1.5rem;
+      opacity: 0.7;
+      transition: opacity var(--transition);
+    }
+
+    .step.active {
+      opacity: 1;
+    }
+
+    .step-number {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      margin-right: 0.75rem;
+      transition: background-color var(--transition), color var(--transition);
+    }
+
+    .step.active .step-number {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .step-title {
+      font-weight: 500;
+    }
+
+    /* Form Elements */
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 1.5rem;
     }
+
     label {
       display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      font-size: 1.1rem;
-      color: #2c3e50;
-    }
-    input[type="number"] {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #ddd;
-      border-radius: 4px;
-      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
       font-weight: 500;
-      color: #2c3e50;
-      background-color: #fff;
+      color: var(--text);
+      transition: color var(--transition);
     }
-    input[type="number"]:focus {
-      border-color: #1a73e8;
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
-    }
-    button {
-      background-color: #1a73e8;
-      color: white;
-      border: none;
-      padding: 14px 24px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1.1rem;
-      font-weight: 600;
-      transition: background-color 0.2s ease;
-    }
-    button:hover {
-      background-color: #0d62d1;
-    }
-    .results {
-      margin-top: 30px;
-      background-color: white;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      display: none;
-    }
-    .results.visible {
-      display: block;
-    }
-    .results h3 {
-      margin-top: 0;
-      color: #1a73e8;
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      font-size: 1.15rem;
-    }
-    table th, table td {
-      padding: 15px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-    table th {
-      font-weight: 600;
-      color: #2c3e50;
-      background-color: #f8f9fa;
-    }
-    table td {
-      font-weight: 500;
-    }
-    .currency-value {
-      font-family: 'Courier New', monospace;
-      font-weight: 600;
-      font-size: 1.2rem;
-      color: #2c3e50;
-    }
-    .recommendation {
-      margin-top: 25px;
-      font-weight: 600;
-      font-size: 1.4rem;
-      color: #1a73e8;
-      text-align: center;
-      padding: 15px;
-      background-color: #e8f0fe;
-      border-radius: 6px;
-    }
-    footer {
-      text-align: center;
-      margin-top: 50px;
-      color: #666;
-      font-size: 14px;
-    }
-    /* AI Chat Styles */
-    .ai-chat {
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      padding: 25px;
-      margin: 30px 0;
-    }
-    .chat-container {
-      height: 400px;
-      overflow-y: auto;
-      border: 1px solid #eee;
-      border-radius: 4px;
-      padding: 15px;
-      margin-bottom: 15px;
-      background-color: #f9f9f9;
-    }
-    .chat-message {
-      margin-bottom: 15px;
-      padding: 10px 15px;
-      border-radius: 18px;
-      max-width: 80%;
+
+    .input-wrapper {
       position: relative;
-      font-size: 1.1rem;
     }
-    .user-message {
-      background-color: #1a73e8;
-      color: white;
-      margin-left: auto;
-      border-bottom-right-radius: 5px;
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      color: var(--text);
+      background-color: var(--background);
+      transition: border-color var(--transition), background-color var(--transition);
     }
-    .ai-message {
-      background-color: #e9ecef;
-      color: #333;
-      margin-right: auto;
-      border-bottom-left-radius: 5px;
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--primary-light);
     }
-    .message-input {
-      display: flex;
-      gap: 10px;
+
+    .input-currency {
+      position: relative;
     }
-    .message-input input {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 1.1rem;
+
+    .input-currency input {
+      padding-left: 2rem;
     }
-    .tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-    }
-    .tab {
-      padding: 15px 25px;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      transition: all 0.3s ease;
-      font-size: 1.2rem;
+
+    .input-currency::before {
+      content: "₹";
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
       font-weight: 500;
+      color: var(--text-light);
+      z-index: 1;
     }
-    .tab.active {
-      border-bottom: 3px solid #1a73e8;
-      color: #1a73e8;
-      font-weight: 600;
+
+    /* Make currency symbol visible in dark mode */
+    body.dark-theme .input-currency::before,
+    [data-theme="dark"] .input-currency::before {
+      color: #ffffff;
     }
-    .tab-content {
-      display: none;
+
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      margin-left: 0.5rem;
+      cursor: help;
     }
-    .tab-content.active {
-      display: block;
+
+    .tooltip-icon {
+      color: var(--text-light);
+      background-color: var(--background-alt);
+      width: 1.25rem;
+      height: 1.25rem;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .tooltip-text {
+      visibility: hidden;
+      position: absolute;
+      width: 200px;
+      background-color: var(--background-alt);
+      color: var(--text);
+      text-align: center;
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity var(--transition);
+      box-shadow: 0 4px 6px var(--shadow);
+      font-size: 0.875rem;
+      font-weight: normal;
+    }
+
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      font-weight: 500;
+      text-align: center;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background-color var(--transition), color var(--transition), transform var(--transition);
+      font-size: 1rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background-color: var(--secondary);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--secondary-dark);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-ghost {
+      background-color: transparent;
+      color: var(--text);
+    }
+
+    .btn-ghost:hover {
+      background-color: var(--background-alt);
+    }
+
+    .btn-icon {
+      padding: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon svg {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .btn-lg {
+      padding: 1rem 2rem;
+      font-size: 1.125rem;
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+
+    /* Additional Styles for Mobile */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 1rem;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Indian Tax Consultation System</h1>
-    <p>Plan your taxes efficiently with our advanced tools and personalized advice</p>
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <svg class="logo-img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+          <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+        </svg>
+        <span>TaxSage 2025</span>
+      </div>
+      <div class="nav-controls">
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
   </header>
 
-  <div class="tabs">
-    <div class="tab active" data-tab="calculator">Tax Calculator</div>
-    <div class="tab" data-tab="ai-chat">AI Tax Assistant</div>
-  </div>
-
-  <div class="container">
-    <div class="tab-content active" id="calculator-tab">
-      <div class="features">
-        <div class="feature-card">
-          <h3>Tax Calculation</h3>
-          <p>Compare old vs new tax regime to find the best option for you based on your income and deductions.</p>
-        </div>
-        <div class="feature-card">
-          <h3>AI Tax Assistant</h3>
-          <p>Get personalized tax advice from our AI assistant to optimize your tax planning.</p>
-        </div>
-        <div class="feature-card">
-          <h3>Document Storage</h3>
-          <p>Securely store and manage your tax documents all in one place.</p>
-          <p><small>Coming soon</small></p>
-        </div>
-        <div class="feature-card">
-          <h3>Tax Filing</h3>
-          <p>File your taxes directly through our platform with guided assistance.</p>
-          <p><small>Coming soon</small></p>
+  <main class="main-layout">
+    <div class="container">
+      <div class="app-intro card">
+        <h1>Indian Tax Consultation System 2025</h1>
+        <p>Plan your taxes efficiently with our advanced tools and personalized advice powered by AI.</p>
+        
+        <div class="features-highlight">
+          <div class="feature">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20"></path>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <div>
+              <h3>Tax Calculator</h3>
+              <p>Compare old vs new tax regime to find the best option for you</p>
+            </div>
+          </div>
+          <div class="feature">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="10 8 16 12 10 16 10 8"></polygon>
+            </svg>
+            <div>
+              <h3>AI Tax Assistant</h3>
+              <p>Get personalized tax advice from our AI assistant</p>
+            </div>
+          </div>
+          <div class="feature">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+              <line x1="3" x2="21" y1="9" y2="9"></line>
+              <line x1="9" x2="9" y1="21" y2="9"></line>
+            </svg>
+            <div>
+              <h3>Visual Reports</h3>
+              <p>View tax breakdowns with clear charts and save as PDF</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="calculator">
-        <h2>Tax Calculator</h2>
-        <p>Find which tax regime is best for you based on your income and deductions</p>
-        
-        <div class="form-group">
-          <label for="income">Annual Income (₹)</label>
-          <input type="number" id="income" placeholder="Enter your annual income" value="1000000">
-        </div>
-        
-        <div class="form-group">
-          <label for="investments">Total Investments under 80C (₹)</label>
-          <input type="number" id="investments" placeholder="Enter your total deductions" value="150000">
-        </div>
-        
-        <div class="form-group">
-          <label for="hra">HRA Exemption (₹)</label>
-          <input type="number" id="hra" placeholder="Enter your HRA exemption" value="60000">
-        </div>
-        
-        <button id="calculate">Calculate Tax</button>
-        
-        <div class="results" id="results">
-          <h3>Tax Calculation Results</h3>
+      <!-- Main Navigation Tabs -->
+      <div class="tab-navigation">
+        <button class="tab-btn active" data-tab="calculator">Tax Calculator</button>
+        <button class="tab-btn" data-tab="ai-chat">AI Tax Assistant</button>
+        <button class="tab-btn" data-tab="tax-tips">Tax Tips</button>
+      </div>
+
+      <!-- Tab Content Sections -->
+      <div class="tab-content active" id="calculator-tab">
+        <div class="card">
+          <div class="card-header">
+            <h2>Tax Calculator 2025</h2>
+            <button class="btn btn-outline btn-sm" id="download-report">Download Report</button>
+          </div>
           
-          <table>
-            <tr>
-              <th></th>
-              <th>Old Regime</th>
-              <th>New Regime</th>
-            </tr>
-            <tr>
-              <td>Taxable Income</td>
-              <td id="old-taxable" class="currency-value">₹0</td>
-              <td id="new-taxable" class="currency-value">₹0</td>
-            </tr>
-            <tr>
-              <td>Tax Amount</td>
-              <td id="old-tax" class="currency-value">₹0</td>
-              <td id="new-tax" class="currency-value">₹0</td>
-            </tr>
-            <tr>
-              <td>Take Home Income</td>
-              <td id="old-takehome" class="currency-value">₹0</td>
-              <td id="new-takehome" class="currency-value">₹0</td>
-            </tr>
-          </table>
+          <!-- Step Navigator -->
+          <div class="steps">
+            <div class="step active" data-step="1">
+              <div class="step-number">1</div>
+              <div class="step-title">Income Details</div>
+            </div>
+            <div class="step" data-step="2">
+              <div class="step-number">2</div>
+              <div class="step-title">Deductions</div>
+            </div>
+            <div class="step" data-step="3">
+              <div class="step-number">3</div>
+              <div class="step-title">Comparison</div>
+            </div>
+          </div>
+
+          <!-- Step Content -->
+          <div class="step-content active" id="step-1">
+            <h3>Income Details</h3>
+            <p>Enter your income details for the financial year 2024-25</p>
+            
+            <div class="form-group">
+              <label for="salary">Annual Salary 
+                <div class="tooltip">
+                  <span class="tooltip-icon">i</span>
+                  <span class="tooltip-text">Enter your gross annual salary before any deductions</span>
+                </div>
+              </label>
+              <div class="input-currency">
+                <input type="number" id="salary" placeholder="Enter your annual salary" value="1000000">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="other-income">Other Income
+                <div class="tooltip">
+                  <span class="tooltip-icon">i</span>
+                  <span class="tooltip-text">Include rental income, interest, capital gains etc.</span>
+                </div>
+              </label>
+              <div class="input-currency">
+                <input type="number" id="other-income" placeholder="Enter other income" value="0">
+              </div>
+            </div>
+            
+            <div class="buttons-row">
+              <button class="btn btn-primary" id="next-step-1">Continue</button>
+            </div>
+          </div>
           
-          <div class="recommendation" id="recommendation">
-            Recommended: <span id="recommended-regime">Old Regime</span>
+          <div class="step-content" id="step-2">
+            <h3>Deductions</h3>
+            <p>Add your eligible deductions under various sections</p>
+            
+            <div class="form-group">
+              <label for="section-80c">Section 80C Investments
+                <div class="tooltip">
+                  <span class="tooltip-icon">i</span>
+                  <span class="tooltip-text">PPF, ELSS, LIC, NSC, etc. (Max ₹1,50,000)</span>
+                </div>
+              </label>
+              <div class="input-currency">
+                <input type="number" id="section-80c" placeholder="Enter 80C investments" value="150000">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="section-80d">Section 80D - Health Insurance
+                <div class="tooltip">
+                  <span class="tooltip-icon">i</span>
+                  <span class="tooltip-text">Health insurance premiums (Self: ₹25,000, Senior Parents: ₹50,000)</span>
+                </div>
+              </label>
+              <div class="input-currency">
+                <input type="number" id="section-80d" placeholder="Enter health insurance premium" value="0">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="hra-exemption">HRA Exemption
+                <div class="tooltip">
+                  <span class="tooltip-icon">i</span>
+                  <span class="tooltip-text">House Rent Allowance exemption if applicable</span>
+                </div>
+              </label>
+              <div class="input-currency">
+                <input type="number" id="hra-exemption" placeholder="Enter HRA exemption" value="60000">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="home-loan">Home Loan Interest (Sec 24)
+                <div class="tooltip">
+                  <span class="tooltip-icon">i</span>
+                  <span class="tooltip-text">Interest on housing loan (Max ₹2,00,000)</span>
+                </div>
+              </label>
+              <div class="input-currency">
+                <input type="number" id="home-loan" placeholder="Enter home loan interest" value="0">
+              </div>
+            </div>
+            
+            <div class="buttons-row">
+              <button class="btn btn-ghost" id="prev-step-2">Back</button>
+              <button class="btn btn-primary" id="next-step-2">Continue</button>
+            </div>
+          </div>
+          
+          <div class="step-content" id="step-3">
+            <h3>Tax Regime Comparison</h3>
+            <p>Compare tax liability under both regimes to find the best option for you</p>
+            
+            <div class="comparison-results">
+              <div class="tax-charts">
+                <div class="chart-container">
+                  <canvas id="comparison-chart"></canvas>
+                </div>
+              </div>
+              
+              <div class="regime-cards">
+                <div class="regime-card" id="old-regime-card">
+                  <div class="regime-header">
+                    <h4>Old Regime</h4>
+                    <span class="regime-badge">With Deductions</span>
+                  </div>
+                  <div class="regime-details">
+                    <div class="detail-row">
+                      <span>Gross Income:</span>
+                      <span id="old-gross-income" class="currency-value">₹1,000,000</span>
+                    </div>
+                    <div class="detail-row">
+                      <span>Total Deductions:</span>
+                      <span id="old-deductions" class="currency-value">₹210,000</span>
+                    </div>
+                    <div class="detail-row highlight">
+                      <span>Taxable Income:</span>
+                      <span id="old-taxable-income" class="currency-value">₹790,000</span>
+                    </div>
+                    <div class="detail-row highlight">
+                      <span>Tax Amount:</span>
+                      <span id="old-tax-amount" class="currency-value">₹70,500</span>
+                    </div>
+                    <div class="detail-row bold">
+                      <span>Net Income:</span>
+                      <span id="old-net-income" class="currency-value">₹929,500</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="regime-card" id="new-regime-card">
+                  <div class="regime-header">
+                    <h4>New Regime</h4>
+                    <span class="regime-badge">Lower Rates</span>
+                  </div>
+                  <div class="regime-details">
+                    <div class="detail-row">
+                      <span>Gross Income:</span>
+                      <span id="new-gross-income" class="currency-value">₹1,000,000</span>
+                    </div>
+                    <div class="detail-row">
+                      <span>Standard Deduction:</span>
+                      <span id="new-deductions" class="currency-value">₹50,000</span>
+                    </div>
+                    <div class="detail-row highlight">
+                      <span>Taxable Income:</span>
+                      <span id="new-taxable-income" class="currency-value">₹950,000</span>
+                    </div>
+                    <div class="detail-row highlight">
+                      <span>Tax Amount:</span>
+                      <span id="new-tax-amount" class="currency-value">₹75,000</span>
+                    </div>
+                    <div class="detail-row bold">
+                      <span>Net Income:</span>
+                      <span id="new-net-income" class="currency-value">₹925,000</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="recommendation-box" id="recommendation-container">
+                <div class="recommendation-header">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 16v-4"></path>
+                    <path d="M12 8h.01"></path>
+                  </svg>
+                  <h3>Recommended Option</h3>
+                </div>
+                <div class="recommendation-content">
+                  <p>Based on your inputs, we recommend choosing:</p>
+                  <div class="recommended-regime" id="recommended-regime">Old Regime</div>
+                  <p class="saving-text">You will save <span id="saving-amount">₹4,500</span> with this option.</p>
+                </div>
+              </div>
+              
+              <div class="buttons-row">
+                <button class="btn btn-ghost" id="prev-step-3">Back</button>
+                <button class="btn btn-primary" id="recalculate">Recalculate</button>
+                <button class="btn btn-secondary" id="download-pdf">Download PDF Report</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="ai-chat-tab">
+        <div class="card chat-card">
+          <div class="card-header">
+            <h2>AI Tax Assistant</h2>
+            <button class="btn btn-outline btn-sm" id="clear-chat">Clear Chat</button>
+          </div>
+          
+          <div class="chat-container" id="chat-container">
+            <div class="chat-message ai-message">
+              <div class="message-avatar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="2" x2="22" y1="12" y2="12"></line>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+              </div>
+              <div class="message-content">
+                <div class="message-header">
+                  <span class="message-name">TaxSage AI</span>
+                  <span class="message-time">Just now</span>
+                </div>
+                <div class="message-text">
+                  Hello! I'm your AI tax assistant for Indian tax laws and regulations for 2025. How can I help you today?
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="chat-input-container">
+            <input type="text" id="user-input" placeholder="Ask a question about Indian tax laws...">
+            <button class="btn btn-primary" id="send-message">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" y2="11" x2="11"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="popular-questions">
+            <h4>Popular Questions</h4>
+            <div class="question-chips">
+              <button class="question-chip" data-question="What is the difference between old and new tax regime?">Old vs New Regime?</button>
+              <button class="question-chip" data-question="What are the tax slabs for 2025?">Tax Slabs 2025</button>
+              <button class="question-chip" data-question="How to save tax on salary income?">Tax Saving Tips</button>
+              <button class="question-chip" data-question="What are Section 80C deductions?">Section 80C Guide</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tax-tips-tab">
+        <div class="card">
+          <div class="card-header">
+            <h2>Tax Tips & Resources</h2>
+          </div>
+          
+          <div class="tax-tips-container">
+            <div class="accordion">
+              <div class="accordion-item">
+                <div class="accordion-header">
+                  <h3>Tax Saving Strategies for 2025</h3>
+                  <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content">
+                  <p>Here are the most effective tax saving strategies for the financial year 2024-25:</p>
+                  <ul>
+                    <li>Maximize your Section 80C investments (₹1.5 lakhs)</li>
+                    <li>Invest in NPS for additional ₹50,000 deduction under Section 80CCD(1B)</li>
+                    <li>Health insurance premiums under Section 80D</li>
+                    <li>Home loan interest deduction under Section 24</li>
+                    <li>Consider tax-free bonds and instruments</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="accordion-item">
+                <div class="accordion-header">
+                  <h3>Understanding the New Tax Regime</h3>
+                  <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content">
+                  <p>The new tax regime offers lower tax rates but removes most deductions and exemptions:</p>
+                  <table class="tax-table">
+                    <thead>
+                      <tr>
+                        <th>Income Range</th>
+                        <th>Tax Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>₹0 - ₹3,00,000</td>
+                        <td>Nil</td>
+                      </tr>
+                      <tr>
+                        <td>₹3,00,001 - ₹6,00,000</td>
+                        <td>5%</td>
+                      </tr>
+                      <tr>
+                        <td>₹6,00,001 - ₹9,00,000</td>
+                        <td>10%</td>
+                      </tr>
+                      <tr>
+                        <td>₹9,00,001 - ₹12,00,000</td>
+                        <td>15%</td>
+                      </tr>
+                      <tr>
+                        <td>₹12,00,001 - ₹15,00,000</td>
+                        <td>20%</td>
+                      </tr>
+                      <tr>
+                        <td>Above ₹15,00,000</td>
+                        <td>30%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div class="accordion-item">
+                <div class="accordion-header">
+                  <h3>Important Tax Deadlines for 2025</h3>
+                  <span class="accordion-icon">+</span>
+                </div>
+                <div class="accordion-content">
+                  <div class="deadline-list">
+                    <div class="deadline-item">
+                      <div class="deadline-date">July 31, 2025</div>
+                      <div class="deadline-desc">Last date for filing Income Tax Return for individuals</div>
+                    </div>
+                    <div class="deadline-item">
+                      <div class="deadline-date">March 31, 2025</div>
+                      <div class="deadline-desc">Last date for making tax-saving investments for FY 2024-25</div>
+                    </div>
+                    <div class="deadline-item">
+                      <div class="deadline-date">September 30, 2025</div>
+                      <div class="deadline-desc">Last date for filing ITR with audit report</div>
+                    </div>
+                    <div class="deadline-item">
+                      <div class="deadline-date">December 31, 2025</div>
+                      <div class="deadline-desc">Last date for filing belated returns</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+  </main>
 
-    <div class="tab-content" id="ai-chat-tab">
-      <div class="ai-chat">
-        <h2>AI Tax Assistant</h2>
-        <p>Get answers to your tax-related questions from our AI tax expert</p>
-        
-        <div class="chat-container" id="chat-container">
-          <div class="chat-message ai-message">
-            Hello! I'm your AI tax assistant. How can I help you with your tax-related questions today?
-          </div>
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-copyright">
+          &copy; 2025 TaxSage | Indian Tax Consultation System
         </div>
-        
-        <div class="message-input">
-          <input type="text" id="user-input" placeholder="Type your tax question here...">
-          <button id="send-message">Send</button>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Disclaimer</a>
         </div>
       </div>
     </div>
-  </div>
-
-  <footer>
-    <p>&copy; 2025 Indian Tax Consultation System | For demonstration purposes only</p>
   </footer>
 
+  <!-- Chart.js for tax visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  
+  <!-- Dark mode enhancement script -->
+  <script src="dark-mode.js"></script>
+  
   <script>
-    // Tab functionality
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        // Remove active class from all tabs and tab contents
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-        
-        // Add active class to clicked tab and corresponding content
-        tab.classList.add('active');
-        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
-      });
-    });
-    
-    // Tax calculator functionality
-    document.getElementById('calculate').addEventListener('click', async function() {
-      const income = parseInt(document.getElementById('income').value) || 0;
-      const investments = parseInt(document.getElementById('investments').value) || 0;
-      const hraExemption = parseInt(document.getElementById('hra').value) || 0;
+    document.addEventListener('DOMContentLoaded', function() {
+      // ======= Theme Toggle =======
+      const themeToggle = document.getElementById('theme-toggle');
+      const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
       
-      try {
-        const response = await fetch('/api/demo/calculate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ income, investments, hraExemption })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          // Display results
-          document.getElementById('old-taxable').textContent = '₹' + data.data.oldRegime.taxableIncome.toLocaleString();
-          document.getElementById('new-taxable').textContent = '₹' + data.data.newRegime.taxableIncome.toLocaleString();
-          document.getElementById('old-tax').textContent = '₹' + data.data.oldRegime.taxAmount.toLocaleString();
-          document.getElementById('new-tax').textContent = '₹' + data.data.newRegime.taxAmount.toLocaleString();
-          document.getElementById('old-takehome').textContent = '₹' + data.data.oldRegime.netIncome.toLocaleString();
-          document.getElementById('new-takehome').textContent = '₹' + data.data.newRegime.netIncome.toLocaleString();
-          
-          document.getElementById('recommended-regime').textContent = 
-            data.data.recommendation === 'OLD_REGIME' ? 'Old Regime' : 'New Regime';
-          
-          // Show results
-          document.getElementById('results').classList.add('visible');
-        }
-      } catch (error) {
-        console.error('Error calculating tax:', error);
-        alert('There was an error calculating your tax. Please try again later.');
+      // Check for saved theme or use system preference
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (!savedTheme && prefersDarkScheme.matches)) {
+        document.body.classList.add('dark-theme');
       }
-    });
-    
-    // AI Chat functionality
-    const chatContainer = document.getElementById('chat-container');
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-message');
-    
-    function addUserMessage(message) {
-      const userMessageDiv = document.createElement('div');
-      userMessageDiv.classList.add('chat-message', 'user-message');
-      userMessageDiv.textContent = message;
-      chatContainer.appendChild(userMessageDiv);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-    
-    function addAIResponse(message) {
-      setTimeout(() => {
-        const aiMessageDiv = document.createElement('div');
-        aiMessageDiv.classList.add('chat-message', 'ai-message');
-        aiMessageDiv.textContent = message;
-        chatContainer.appendChild(aiMessageDiv);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }, 500); // Small delay to simulate AI thinking
-    }
-    
-    // Handle sending messages
-    async function sendMessage() {
-      const message = userInput.value.trim();
-      if (message) {
-        addUserMessage(message);
+      
+      themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        const theme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+        localStorage.setItem('theme', theme);
+      });
+      
+      // ======= Tab Navigation =======
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Remove active class from all tabs
+          tabBtns.forEach(tab => tab.classList.remove('active'));
+          tabContents.forEach(content => content.classList.remove('active'));
+          
+          // Add active class to clicked tab
+          btn.classList.add('active');
+          const tabId = btn.dataset.tab;
+          document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+      });
+      
+      // ======= Step Navigation =======
+      const stepBtns = {
+        'next-step-1': { currentStep: 1, nextStep: 2 },
+        'next-step-2': { currentStep: 2, nextStep: 3 },
+        'prev-step-2': { currentStep: 2, nextStep: 1 },
+        'prev-step-3': { currentStep: 3, nextStep: 2 },
+        'recalculate': { currentStep: 3, nextStep: 1 }
+      };
+      
+      Object.keys(stepBtns).forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const { currentStep, nextStep } = stepBtns[btnId];
+            
+            // Hide current step content
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            // Show next step content
+            document.getElementById(`step-${nextStep}`).classList.add('active');
+            
+            // Update step indicators
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+            document.querySelector(`.step[data-step="${nextStep}"]`).classList.add('active');
+            
+            // If moving to step 3, calculate and display results
+            if (nextStep === 3) {
+              calculateTax();
+              renderChart();
+            }
+          });
+        }
+      });
+      
+      // ======= Tax Calculator =======
+      function calculateTax() {
+        // Get form values
+        const salary = parseFloat(document.getElementById('salary').value) || 0;
+        const otherIncome = parseFloat(document.getElementById('other-income').value) || 0;
+        const section80c = parseFloat(document.getElementById('section-80c').value) || 0;
+        const section80d = parseFloat(document.getElementById('section-80d').value) || 0;
+        const hraExemption = parseFloat(document.getElementById('hra-exemption').value) || 0;
+        const homeLoan = parseFloat(document.getElementById('home-loan').value) || 0;
+        
+        const grossIncome = salary + otherIncome;
+        
+        // Calculate for old regime
+        const oldRegimeDeductions = Math.min(section80c, 150000) + 
+                                    Math.min(section80d, 25000) + 
+                                    hraExemption + 
+                                    Math.min(homeLoan, 200000);
+        
+        const oldTaxableIncome = Math.max(0, grossIncome - oldRegimeDeductions);
+        let oldTaxAmount = calculateOldRegimeTax(oldTaxableIncome);
+        
+        // Add cess
+        oldTaxAmount = oldTaxAmount * 1.04; // 4% cess
+        
+        // Calculate for new regime
+        const standardDeduction = 50000;
+        const newTaxableIncome = Math.max(0, grossIncome - standardDeduction);
+        let newTaxAmount = calculateNewRegimeTax(newTaxableIncome);
+        
+        // Add cess
+        newTaxAmount = newTaxAmount * 1.04; // 4% cess
+        
+        // Display results
+        document.getElementById('old-gross-income').textContent = formatCurrency(grossIncome);
+        document.getElementById('old-deductions').textContent = formatCurrency(oldRegimeDeductions);
+        document.getElementById('old-taxable-income').textContent = formatCurrency(oldTaxableIncome);
+        document.getElementById('old-tax-amount').textContent = formatCurrency(oldTaxAmount);
+        document.getElementById('old-net-income').textContent = formatCurrency(grossIncome - oldTaxAmount);
+        
+        document.getElementById('new-gross-income').textContent = formatCurrency(grossIncome);
+        document.getElementById('new-deductions').textContent = formatCurrency(standardDeduction);
+        document.getElementById('new-taxable-income').textContent = formatCurrency(newTaxableIncome);
+        document.getElementById('new-tax-amount').textContent = formatCurrency(newTaxAmount);
+        document.getElementById('new-net-income').textContent = formatCurrency(grossIncome - newTaxAmount);
+        
+        // Recommendation
+        const oldRegimeCard = document.getElementById('old-regime-card');
+        const newRegimeCard = document.getElementById('new-regime-card');
+        const recommendedRegime = document.getElementById('recommended-regime');
+        const savingAmount = document.getElementById('saving-amount');
+        
+        oldRegimeCard.classList.remove('recommended');
+        newRegimeCard.classList.remove('recommended');
+        
+        if (oldTaxAmount <= newTaxAmount) {
+          oldRegimeCard.classList.add('recommended');
+          recommendedRegime.textContent = 'Old Regime';
+          savingAmount.textContent = formatCurrency(newTaxAmount - oldTaxAmount);
+        } else {
+          newRegimeCard.classList.add('recommended');
+          recommendedRegime.textContent = 'New Regime';
+          savingAmount.textContent = formatCurrency(oldTaxAmount - newTaxAmount);
+        }
+      }
+      
+      function calculateOldRegimeTax(income) {
+        let tax = 0;
+        
+        if (income <= 250000) {
+          tax = 0;
+        } else if (income <= 500000) {
+          tax = (income - 250000) * 0.05;
+        } else if (income <= 1000000) {
+          tax = 12500 + (income - 500000) * 0.20;
+        } else {
+          tax = 12500 + 100000 + (income - 1000000) * 0.30;
+        }
+        
+        return tax;
+      }
+      
+      function calculateNewRegimeTax(income) {
+        let tax = 0;
+        
+        if (income <= 300000) {
+          tax = 0;
+        } else if (income <= 600000) {
+          tax = (income - 300000) * 0.05;
+        } else if (income <= 900000) {
+          tax = 15000 + (income - 600000) * 0.10;
+        } else if (income <= 1200000) {
+          tax = 15000 + 30000 + (income - 900000) * 0.15;
+        } else if (income <= 1500000) {
+          tax = 15000 + 30000 + 45000 + (income - 1200000) * 0.20;
+        } else {
+          tax = 15000 + 30000 + 45000 + 60000 + (income - 1500000) * 0.30;
+        }
+        
+        return tax;
+      }
+      
+      function formatCurrency(amount) {
+        return '₹' + amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+      
+      // ======= Chart Rendering =======
+      function renderChart() {
+        const oldTaxAmount = parseFloat(document.getElementById('old-tax-amount').textContent.replace(/[₹,]/g, ''));
+        const newTaxAmount = parseFloat(document.getElementById('new-tax-amount').textContent.replace(/[₹,]/g, ''));
+        const oldNetIncome = parseFloat(document.getElementById('old-net-income').textContent.replace(/[₹,]/g, ''));
+        const newNetIncome = parseFloat(document.getElementById('new-net-income').textContent.replace(/[₹,]/g, ''));
+        
+        const chartCanvas = document.getElementById('comparison-chart');
+        
+        // Destroy existing chart if it exists
+        if (window.taxChart) {
+          window.taxChart.destroy();
+        }
+        
+        // Create new chart
+        window.taxChart = new Chart(chartCanvas, {
+          type: 'bar',
+          data: {
+            labels: ['Old Regime', 'New Regime'],
+            datasets: [
+              {
+                label: 'Tax Amount',
+                data: [oldTaxAmount, newTaxAmount],
+                backgroundColor: ['rgba(220, 53, 69, 0.7)', 'rgba(220, 53, 69, 0.7)'],
+                borderColor: ['rgba(220, 53, 69, 1)', 'rgba(220, 53, 69, 1)'],
+                borderWidth: 1
+              },
+              {
+                label: 'Net Income',
+                data: [oldNetIncome, newNetIncome],
+                backgroundColor: ['rgba(32, 201, 151, 0.7)', 'rgba(32, 201, 151, 0.7)'],
+                borderColor: ['rgba(32, 201, 151, 1)', 'rgba(32, 201, 151, 1)'],
+                borderWidth: 1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(200, 200, 200, 0.1)'
+                }
+              },
+              x: {
+                grid: {
+                  display: false
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+              }
+            }
+          }
+        });
+      }
+      
+      // ======= Download PDF =======
+      document.getElementById('download-pdf').addEventListener('click', function() {
+        alert('PDF report generation functionality would be implemented here. This would generate a detailed PDF with all tax calculations and regime comparison.');
+      });
+      
+      // ======= Accordion =======
+      const accordionHeaders = document.querySelectorAll('.accordion-header');
+      
+      accordionHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+          const accordionItem = header.parentElement;
+          const accordionContent = header.nextElementSibling;
+          const accordionIcon = header.querySelector('.accordion-icon');
+          
+          // Toggle current item
+          accordionItem.classList.toggle('active');
+          
+          if (accordionItem.classList.contains('active')) {
+            accordionContent.style.maxHeight = accordionContent.scrollHeight + 'px';
+            accordionIcon.textContent = '-';
+          } else {
+            accordionContent.style.maxHeight = '0';
+            accordionIcon.textContent = '+';
+          }
+        });
+      });
+      
+      // ======= AI Chat =======
+      const chatContainer = document.getElementById('chat-container');
+      const userInput = document.getElementById('user-input');
+      const sendButton = document.getElementById('send-message');
+      const clearChatButton = document.getElementById('clear-chat');
+      const questionChips = document.querySelectorAll('.question-chip');
+      
+      // Add event listener for send button
+      sendButton.addEventListener('click', sendMessage);
+      
+      // Add event listener for Enter key
+      userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          sendMessage();
+        }
+      });
+      
+      // Add event listeners for question chips
+      questionChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          userInput.value = chip.dataset.question;
+          sendMessage();
+        });
+      });
+      
+      // Clear chat
+      clearChatButton.addEventListener('click', () => {
+        // Keep only the first AI message
+        const firstMessage = chatContainer.querySelector('.chat-message');
+        chatContainer.innerHTML = '';
+        chatContainer.appendChild(firstMessage);
+      });
+      
+      async function sendMessage() {
+        const message = userInput.value.trim();
+        if (!message) return;
+        
+        // Add user message to chat
+        addMessageToChat('user', message);
+        
+        // Clear input
+        userInput.value = '';
+        
+        // Show typing indicator
+        const typingIndicator = addTypingIndicator();
         
         try {
-          // Show typing indicator
-          const typingIndicator = document.createElement('div');
-          typingIndicator.classList.add('chat-message', 'ai-message');
-          typingIndicator.textContent = 'Typing...';
-          typingIndicator.id = 'typing-indicator';
-          chatContainer.appendChild(typingIndicator);
-          chatContainer.scrollTop = chatContainer.scrollHeight;
-          
-          // Call the AI API
+          // Send message to API
           const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({ message })
           });
@@ -454,41 +1224,98 @@
           const data = await response.json();
           
           // Remove typing indicator
-          const indicator = document.getElementById('typing-indicator');
-          if (indicator) {
-            chatContainer.removeChild(indicator);
-          }
+          typingIndicator.remove();
           
-          // Add AI response
-          if (data.success && data.data && data.data.message) {
-            addAIResponse(data.data.message);
-          } else {
-            throw new Error('Invalid response from server');
-          }
+          // Add AI response to chat
+          addMessageToChat('ai', data.response);
         } catch (error) {
-          console.error('Error in chat:', error);
+          console.error('Error:', error);
           
-          // Remove typing indicator if exists
-          const indicator = document.getElementById('typing-indicator');
-          if (indicator) {
-            chatContainer.removeChild(indicator);
-          }
+          // Remove typing indicator
+          typingIndicator.remove();
           
-          // Show error message
-          addAIResponse("I'm sorry, I'm having trouble connecting right now. Please try again later.");
+          // Add error message to chat
+          addMessageToChat('ai', 'Sorry, I encountered an error while processing your request. Please try again later.');
         }
         
-        userInput.value = '';
+        // Scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
       }
-    }
-    
-    sendButton.addEventListener('click', sendMessage);
-    
-    // Allow pressing Enter to send messages
-    userInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        sendMessage();
+      
+      function addMessageToChat(type, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${type}-message`;
+        
+        // Format current time
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Set avatar and name based on message type
+        let avatar, name;
+        if (type === 'user') {
+          avatar = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>`;
+          name = 'You';
+        } else {
+          avatar = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" x2="22" y1="12" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>`;
+          name = 'TaxSage AI';
+        }
+        
+        messageDiv.innerHTML = `
+          <div class="message-avatar">${avatar}</div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-name">${name}</span>
+              <span class="message-time">${timeString}</span>
+            </div>
+            <div class="message-text">${text}</div>
+          </div>
+        `;
+        
+        chatContainer.appendChild(messageDiv);
+        return messageDiv;
       }
+      
+      function addTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'chat-message ai-message typing';
+        
+        typingDiv.innerHTML = `
+          <div class="message-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" x2="22" y1="12" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </div>
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-name">TaxSage AI</span>
+              <span class="message-time">Typing...</span>
+            </div>
+            <div class="message-text">
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        chatContainer.appendChild(typingDiv);
+        return typingDiv;
+      }
+      
+      // Initialize with step 1 active
+      document.querySelector('.step[data-step="1"]').classList.add('active');
+      document.getElementById('step-1').classList.add('active');
     });
   </script>
 </body>
