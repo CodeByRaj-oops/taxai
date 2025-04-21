@@ -12,6 +12,7 @@
     "validate": "npm run lint && npm run check-types"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "autoprefixer": "^10.4.16",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",

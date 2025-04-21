@@ -322,7 +322,7 @@ Choosing between them depends on your income level and how much you invest in ta
                           📋
                         </button>
                       )}
-                    </div>
+                  </div>
                   </div>
                 </div>
               ))}
