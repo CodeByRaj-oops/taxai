@@ -13,6 +13,7 @@ export default function Header() {
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/calculator', label: 'Tax Calculator' },
+    { href: '/advisor', label: 'AI Tax Advisor' },
     { href: '/chat', label: 'AI Tax Assistant' },
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/about', label: 'About' },

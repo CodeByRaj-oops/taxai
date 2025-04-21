@@ -120,6 +120,9 @@ export default function Home() {
             <Link href="/calculator" className="bg-primary-500 hover:bg-primary-600 transition-colors text-white px-6 py-3 rounded-lg font-medium shadow-md">
               Calculate Your Tax
             </Link>
+            <Link href="/advisor" className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-6 py-3 rounded-lg font-medium shadow-md">
+              AI Tax Advisor
+            </Link>
             <Link href="/chat" className="bg-white dark:bg-dark-card hover:bg-gray-100 dark:hover:bg-dark-border transition-colors border border-gray-300 dark:border-dark-border text-gray-800 dark:text-gray-200 px-6 py-3 rounded-lg font-medium shadow-sm">
               Chat with AI Assistant
             </Link>
